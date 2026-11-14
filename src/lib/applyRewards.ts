@@ -60,13 +60,21 @@ export function applyRewards(
     )
   }
   if (rewards.yuanbao) {
-    next.currency.yuanbao += rewards.yuanbao
-    messages.push(`元寶 +${rewards.yuanbao}（體驗）`)
+    next.currency.yuanbao = Math.max(
+      0,
+      next.currency.yuanbao + rewards.yuanbao,
+    )
+    messages.push(
+      rewards.yuanbao > 0
+        ? `元寶 +${rewards.yuanbao}（體驗）`
+        : `元寶 ${rewards.yuanbao}（體驗）`,
+    )
   }
   if (rewards.hpDelta) {
+    // 氣血下限 1，避免事件扣血後卡在 0 的非法／半死狀態
     next.stats.hp = clamp(
       next.stats.hp + rewards.hpDelta,
-      0,
+      1,
       next.stats.maxHp,
     )
     messages.push(

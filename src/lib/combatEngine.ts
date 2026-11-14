@@ -201,8 +201,10 @@ export function performPlayerAction(
 
   const player = state.allies.find((a) => a.isPlayer) ?? state.allies[0]
   if (!player || player.hp <= 0) {
-    state.logs.push({ text: '你已無法作戰。' })
-    checkEnd(state)
+    // 主角倒下即判負，避免「主角已死、墊刀隊友仍活」造成操作死鎖
+    state.finished = true
+    state.victory = false
+    state.logs.push({ text: '你已無法作戰——此戰失利。' })
     return state
   }
 
