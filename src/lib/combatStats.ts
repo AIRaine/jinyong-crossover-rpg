@@ -3,13 +3,14 @@ import {
   refineBonus,
 } from '../data/equipments'
 import { getMartialById } from '../data/martialArts'
+import { softCapBonus } from './combatMath'
 import type { GameState, PlayerStats } from '../types/game'
 
-/** 依裝備＋武學配置計算面板屬性（含精煉／淬火／塗毒加成） */
+/** 依裝備＋武學配置計算面板屬性（含精煉／淬火／塗毒加成＋攻防軟上限） */
 export function computePanelStats(state: GameState): PlayerStats {
   const base = { ...state.stats }
-  let attack = base.attack
-  let defense = base.defense
+  let atkBonus = 0
+  let defBonus = 0
   let maxHp = base.maxHp
   let maxInternalForce = base.maxInternalForce
   let maxStamina = base.maxStamina
@@ -22,8 +23,9 @@ export function computePanelStats(state: GameState): PlayerStats {
     const def = getEquipmentById(owned.defId)
     if (!def) continue
     const rb = refineBonus(owned.refineLevel)
-    attack += def.attack + rb.attack + (owned.quenched ? 3 : 0) + (owned.poisoned ? 2 : 0)
-    defense += def.defense + rb.defense
+    atkBonus +=
+      def.attack + rb.attack + (owned.quenched ? 3 : 0) + (owned.poisoned ? 2 : 0)
+    defBonus += def.defense + rb.defense
     maxHp += def.maxHp ?? 0
     maxInternalForce += def.maxInternalForce ?? 0
     maxStamina += def.maxStamina ?? 0
@@ -35,8 +37,8 @@ export function computePanelStats(state: GameState): PlayerStats {
     const art = getMartialById(id)
     const lv = state.martialProgress[id] ?? 0
     if (!art || lv <= 0) return
-    attack += (art.attackPerLevel ?? 0) * lv
-    defense += (art.defensePerLevel ?? 0) * lv
+    atkBonus += (art.attackPerLevel ?? 0) * lv
+    defBonus += (art.defensePerLevel ?? 0) * lv
     maxInternalForce += (art.maxInternalPerLevel ?? 0) * lv
     maxHp += (art.maxHpPerLevel ?? 0) * lv
     maxStamina += (art.maxStaminaPerLevel ?? 0) * lv
@@ -49,10 +51,13 @@ export function computePanelStats(state: GameState): PlayerStats {
 
   // 俠侶雙修簡化加成
   if (state.partnerId) {
-    attack += 3
-    defense += 2
+    atkBonus += 3
+    defBonus += 2
     maxInternalForce += 8
   }
+
+  const attack = base.attack + Math.floor(softCapBonus(atkBonus))
+  const defense = base.defense + Math.floor(softCapBonus(defBonus, 40, 0.5))
 
   return {
     ...base,

@@ -24,11 +24,13 @@ export interface BoardEntry {
 const HEAVEN_NPCS: Omit<BoardEntry, 'isPlayer'>[] = [
   { id: 'lb_df', name: '東芳不敗', score: 980, note: '玄木崖劍氣', sparPower: 95 },
   { id: 'lb_qf', name: '橋峰', score: 960, note: '降朧掌力', sparPower: 92 },
+  { id: 'lb_oyf', name: '歐楊鋒', score: 950, note: '逆脈白駝', sparPower: 93 },
   { id: 'lb_yg', name: '揚過', score: 910, note: '玄鐵沉劍', sparPower: 88 },
+  { id: 'lb_fqy', name: '峯清揚', score: 900, note: '思過崖劍意', sparPower: 90 },
   { id: 'lb_lhc', name: '凌狐沖', score: 880, note: '酒劍飄忽', sparPower: 84 },
+  { id: 'lb_hys', name: '皇藥師', score: 870, note: '琴毒雙絕', sparPower: 86 },
   { id: 'lb_gj', name: '廓靖', score: 860, note: '禦守如城', sparPower: 82 },
   { id: 'lb_zwj', name: '章無忌', score: 840, note: '明皎內息', sparPower: 80 },
-  { id: 'lb_hr', name: '皇容', score: 800, note: '落影奇謀', sparPower: 78 },
   { id: 'lb_xln', name: '宵朧女', score: 820, note: '古暮寒絲', sparPower: 81 },
 ]
 

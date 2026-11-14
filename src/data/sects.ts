@@ -100,14 +100,28 @@ export const SECTS: SectDef[] = [
     id: 'sect_emei',
     name: '峩眉派',
     motto: '柔中帶剛，劍氣如虹。',
-    homeLocationId: 'loc_suhang',
-    description: '江南有分院聯絡點。入門重規矩，貢獻以護道濟弱為主。',
+    homeLocationId: 'loc_emei_gate',
+    description: '峩眉山門戒律森嚴。入門重規矩，貢獻以護道濟弱為主。',
     entry: {
       minLevel: 1,
       minSilver: 35,
-      description: '銀兩 35，並曾至蘇杭津。',
+      description: '銀兩 35，並曾至峩眉山門。',
     },
     rankThresholds: [0, 40, 105, 230],
+  },
+  {
+    id: 'sect_taohua',
+    name: '桃華一脈',
+    motto: '奇門為骨，琴心為魂。',
+    homeLocationId: 'loc_peach_island',
+    description: '島主一系不喜外人，但肯教你奇門與廚藝的人，往往已經認可你。',
+    entry: {
+      minLevel: 3,
+      minSilver: 80,
+      minComprehension: 50,
+      description: '等級 3、悟性 ≥ 50、銀兩 80，並曾登桃華島。',
+    },
+    rankThresholds: [0, 70, 150, 320],
   },
 ]
 

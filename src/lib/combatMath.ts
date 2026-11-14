@@ -1,6 +1,20 @@
 /**
+ * 裝備／武學加成軟上限：超過 soft 後收益遞減，防止數值膨脹。
+ * 例：soft=48、ratio=0.45 → 加成 80 約等效 48+(32*0.45)=62.4
+ */
+export function softCapBonus(
+  bonus: number,
+  soft = 48,
+  ratio = 0.45,
+): number {
+  if (bonus <= soft) return bonus
+  return soft + (bonus - soft) * ratio
+}
+
+/**
  * 傷害公式：
  * atk * (100 / (100 + def)) * 倍率 * 內力壓制(±30%)
+ * atk／def 建議先經 softCapBonus 處理面板加成。
  */
 export function calcDamage(params: {
   atk: number

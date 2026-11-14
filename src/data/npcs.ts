@@ -74,9 +74,21 @@ export const ITEM_CATALOG: Record<string, Omit<InventoryItem, 'quantity'>> = {
     description: '茶氣厚重，適合長談與訂盟。',
     kind: 'gift',
   },
+  gift_snake_wine: {
+    id: 'gift_snake_wine',
+    name: '白駝藥酒',
+    description: '辣得舌頭打結。歐楊鋒一系的人聞香便知深淺。',
+    kind: 'gift',
+  },
+  gift_buddhist_bead: {
+    id: 'gift_buddhist_bead',
+    name: '沉香念珠',
+    description: '一串溫熱的木珠，適合僧門與心軟之人。',
+    kind: 'gift',
+  },
 }
 
-/** 十二位以上諧音角色切片 */
+/** 約 25 名諧音角色（六部作品切片） */
 export const NPCS: NpcDef[] = [
   {
     id: 'npc_huang_rong',
@@ -98,6 +110,39 @@ export const NPCS: NpcDef[] = [
     bio: '學招慢、守諾快。站在你身前時，像一堵不肯倒的城牆。',
     romanceable: false,
     favoriteGifts: ['gift_protein_bar', 'gift_tea_brick'],
+    startingAffinity: 0,
+  },
+  {
+    id: 'npc_huang_yaoshi',
+    name: '皇藥師',
+    title: '桃華島主，琴毒雙絕',
+    role: 'dps',
+    homeLocationId: 'loc_peach_island',
+    bio: '脾氣比潮汐難測。你若用現代樂理解釋他的琴音，他可能賞你，也可能趕你下島。',
+    romanceable: false,
+    favoriteGifts: ['gift_blueprint', 'gift_peach_pastry', 'gift_rare_tome'],
+    startingAffinity: 0,
+  },
+  {
+    id: 'npc_hong_qigong',
+    name: '洪柒公',
+    title: '丐幇老叫化',
+    role: 'tank',
+    homeLocationId: 'loc_beggar_hall',
+    bio: '貪吃、護短、棒法狠。請他出手前，先準備烤雞或能量硬糕。',
+    romanceable: false,
+    favoriteGifts: ['gift_spice_pouch', 'gift_protein_bar', 'gift_wine_gourd'],
+    startingAffinity: 5,
+  },
+  {
+    id: 'npc_ouyang_feng',
+    name: '歐楊鋒',
+    title: '白駝奇功的顛峰客',
+    role: 'dps',
+    homeLocationId: 'loc_peach_island',
+    bio: '經脈逆行，性情亦逆。合作條件古怪，戰力卻高得嚇人。',
+    romanceable: false,
+    favoriteGifts: ['gift_snake_wine', 'gift_rare_tome'],
     startingAffinity: 0,
   },
   {
@@ -145,6 +190,39 @@ export const NPCS: NpcDef[] = [
     startingAffinity: 0,
   },
   {
+    id: 'npc_zhou_zhiruo',
+    name: '週芷若',
+    title: '峩眉派的清冷女俠',
+    role: 'dps',
+    homeLocationId: 'loc_emei_gate',
+    bio: '外表端肅，內心常在門規與私心之間拉扯。可攻略，需耐心與誠意。',
+    romanceable: true,
+    favoriteGifts: ['gift_buddhist_bead', 'gift_jade_comb', 'gift_tea_brick'],
+    startingAffinity: 0,
+  },
+  {
+    id: 'npc_mie_jue',
+    name: '滅訣師太',
+    title: '峩眉掌門',
+    role: 'dps',
+    homeLocationId: 'loc_emei_gate',
+    bio: '紀律嚴、刀更快。別在她面前玩梗，除非你想體驗「下山反省」。',
+    romanceable: false,
+    favoriteGifts: ['gift_buddhist_bead', 'gift_rare_tome'],
+    startingAffinity: 0,
+  },
+  {
+    id: 'npc_xie_xun',
+    name: '榭遜',
+    title: '冰火島影的獅吼客',
+    role: 'tank',
+    homeLocationId: 'loc_icefire_isle',
+    bio: '聲如裂帛，情義卻深。別提他恨的人，多提他疼的晚輩。',
+    romanceable: false,
+    favoriteGifts: ['gift_wine_gourd', 'gift_protein_bar', 'gift_tea_brick'],
+    startingAffinity: 0,
+  },
+  {
     id: 'npc_linghu_chong',
     name: '凌狐沖',
     title: '華嶠派的酒劍浪子',
@@ -178,6 +256,28 @@ export const NPCS: NpcDef[] = [
     startingAffinity: 0,
   },
   {
+    id: 'npc_yue_buqun',
+    name: '嶽不群',
+    title: '華嶠派「君子」掌門',
+    role: 'support',
+    homeLocationId: 'loc_huashan',
+    bio: '笑容標準、措辭完美。你總覺得他在做季度簡報——而且投影片有毒。',
+    romanceable: false,
+    favoriteGifts: ['gift_ink_notes', 'gift_tea_brick', 'gift_rare_tome'],
+    startingAffinity: 0,
+  },
+  {
+    id: 'npc_feng_qingyang',
+    name: '峯清揚',
+    title: '隱於思過崖的劍癡',
+    role: 'dps',
+    homeLocationId: 'loc_huashan',
+    bio: '不問門戶，只問劍意。請教他之前，先證明你不是來打卡的。',
+    romanceable: false,
+    favoriteGifts: ['gift_sword_oil', 'gift_wine_gourd'],
+    startingAffinity: 0,
+  },
+  {
     id: 'npc_qiao_feng',
     name: '橋峰',
     title: '丐幇相關的龍象之軀',
@@ -200,6 +300,50 @@ export const NPCS: NpcDef[] = [
     startingAffinity: 0,
   },
   {
+    id: 'npc_duan_yu',
+    name: '緞語',
+    title: '大裡城的逍遙浪子',
+    role: 'dps',
+    homeLocationId: 'loc_dali',
+    bio: '輕功了得，心卻容易被美景與美人牽走。輸出依賴走位與時機。',
+    romanceable: false,
+    favoriteGifts: ['gift_peach_pastry', 'gift_jade_comb'],
+    startingAffinity: 0,
+  },
+  {
+    id: 'npc_xu_zhu',
+    name: '虛築',
+    title: '少凜外門出身的糊塗高僧',
+    role: 'support',
+    homeLocationId: 'loc_lingjiu',
+    bio: '記不住規矩，卻記得別人的難處。隊伍裡的「情緒穩定劑」。',
+    romanceable: false,
+    favoriteGifts: ['gift_buddhist_bead', 'gift_peach_pastry', 'gift_tea_brick'],
+    startingAffinity: 5,
+  },
+  {
+    id: 'npc_murong_fu',
+    name: '暮容復',
+    title: '以復國為 KPI 的貴公子',
+    role: 'dps',
+    homeLocationId: 'loc_tianji_hall',
+    bio: '招式華麗，執念更華麗。別隨便答應幫他「專案復盤」。',
+    romanceable: false,
+    favoriteGifts: ['gift_rare_tome', 'gift_ink_notes'],
+    startingAffinity: 0,
+  },
+  {
+    id: 'npc_azhu',
+    name: '阿硃',
+    title: '易容與情義並擅的姑娘',
+    role: 'support',
+    homeLocationId: 'loc_yanmen',
+    bio: '面具換得快，真心卻慢。可攻略；她更在意你是否護得住人。',
+    romanceable: true,
+    favoriteGifts: ['gift_jade_comb', 'gift_spice_pouch', 'gift_tea_brick'],
+    startingAffinity: 0,
+  },
+  {
     id: 'npc_wei_xiaobao',
     name: '魏曉寶',
     title: '靠嘴與運氣闖蕩的滑頭',
@@ -211,25 +355,25 @@ export const NPCS: NpcDef[] = [
     startingAffinity: 10,
   },
   {
+    id: 'npc_shuang_er',
+    name: '雙児',
+    title: '溫柔俐落的貼身幫手',
+    role: 'support',
+    homeLocationId: 'loc_luoyang_post',
+    bio: '針線、毒药與人情世故樣樣拿手。可攻略；她不求你稱霸，只求你平安。',
+    romanceable: true,
+    favoriteGifts: ['gift_jade_comb', 'gift_herb_kit', 'gift_peach_pastry'],
+    startingAffinity: 8,
+  },
+  {
     id: 'npc_bai_xiaosheng',
     name: '百曉笙',
     title: '天機閣掛名的情報散人',
     role: 'support',
-    homeLocationId: 'loc_xiangyang',
+    homeLocationId: 'loc_tianji_hall',
     bio: '賣消息、賣排名、偶爾賣關子。與他維持好感，榜單與任務提示會準一些。',
     romanceable: false,
     favoriteGifts: ['gift_ink_notes', 'gift_tea_brick', 'gift_blueprint'],
-    startingAffinity: 0,
-  },
-  {
-    id: 'npc_duan_yu',
-    name: '緞譽',
-    title: '大裡城的逍遙浪子',
-    role: 'dps',
-    homeLocationId: 'loc_dali',
-    bio: '輕功了得，心卻容易被美景與美人牽走。輸出依賴走位與時機。',
-    romanceable: false,
-    favoriteGifts: ['gift_peach_pastry', 'gift_jade_comb'],
     startingAffinity: 0,
   },
 ]
@@ -239,12 +383,7 @@ export function getNpcById(id: string): NpcDef | undefined {
 }
 
 export function getNpcsAtLocation(locationId: string): NpcDef[] {
-  return NPCS.filter(
-    (n) =>
-      n.homeLocationId === locationId ||
-      // also show if listed on location.npcIds — resolved in UI via both
-      false,
-  )
+  return NPCS.filter((n) => n.homeLocationId === locationId)
 }
 
 export function createItemFromCatalog(

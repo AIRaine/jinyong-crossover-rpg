@@ -127,8 +127,8 @@ export function createInitialGameState(): GameState {
     pendingEventId: null,
     rumors: [
       '襄揚城東夜有妖光——有人說是雷火，有人說是穿越客的手電筒。',
-      '華嶠論劍名額尚未定案，已有門派開始送禮給百曉笙。',
-      '丐幇分舵新到一批邊城茶磚，可換消息。',
+      '桃華島琴聲三日不停，漁民說花都跟著顫。',
+      '天機閣分閣開始賣「結局預測」——收費且不退。',
     ],
     tradeRouteLevel: 0,
     ngPlusCount: 0,
