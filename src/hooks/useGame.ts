@@ -200,17 +200,29 @@ export function useGame() {
       let rootBone = state.rootBone
       if (
         payload.originId === 'origin_engineer' ||
-        payload.originId === 'origin_reporter'
+        payload.originId === 'origin_reporter' ||
+        payload.originId === 'origin_lawyer' ||
+        payload.originId === 'origin_streamer'
       ) {
         comprehension += 10
       }
       if (
         payload.originId === 'origin_coach' ||
-        payload.originId === 'origin_civil'
+        payload.originId === 'origin_civil' ||
+        payload.originId === 'origin_delivery' ||
+        payload.originId === 'origin_cabin'
       ) {
         rootBone += 10
       }
       if (payload.originId === 'origin_er_doctor') comprehension += 5
+      if (payload.originId === 'origin_bahang') {
+        comprehension += 5
+        rootBone += 3
+      }
+      if (payload.originId === 'origin_unemployed') {
+        comprehension += 8
+        rootBone += 5
+      }
 
       const playerName =
         payload.playerName.trim().slice(0, 12) || '無名穿越客'

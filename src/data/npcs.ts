@@ -86,6 +86,54 @@ export const ITEM_CATALOG: Record<string, Omit<InventoryItem, 'quantity'>> = {
     description: '一串溫熱的木珠，適合僧門與心軟之人。',
     kind: 'gift',
   },
+  gift_throat_lozenge: {
+    id: 'gift_throat_lozenge',
+    name: '潤喉糖一鐵盒',
+    description: '甜得務實。夜場公關、説書人、愛說話的俠客都用得上。',
+    kind: 'gift',
+  },
+  gift_namecard_case: {
+    id: 'gift_namecard_case',
+    name: '金屬名片夾',
+    description: '閃著不屬於這個時代的光澤。交換「座標」時氣場＋1。',
+    kind: 'gift',
+  },
+  gift_rain_cape_pin: {
+    id: 'gift_rain_cape_pin',
+    name: '防水披肩扣',
+    description: '外送雨衣精神的金屬扣。趕路人見了會點頭。',
+    kind: 'gift',
+  },
+  gift_mini_light: {
+    id: 'gift_mini_light',
+    name: '迷你補光燈',
+    description: '電力有限的小燈。暗處一亮，有人喊妖光。',
+    kind: 'gift',
+  },
+  gift_contract_pen: {
+    id: 'gift_contract_pen',
+    name: '簽字筆與便箋',
+    description: '可寫條款、可當細籤。律師與百曉笙都會想借看。',
+    kind: 'gift',
+  },
+  gift_amenity_kit: {
+    id: 'gift_amenity_kit',
+    name: '過夜盥洗小包',
+    description: '香皂片、薄荷糖與小梳。空服員的溫柔武裝。',
+    kind: 'gift',
+  },
+  gift_point_card: {
+    id: 'gift_point_card',
+    name: '便利商店點數卡',
+    description: '磁條失效的現代遺物。當書籤、當護身符、當話題都行。',
+    kind: 'gift',
+  },
+  gift_tissue_pack: {
+    id: 'gift_tissue_pack',
+    name: '半包袖珍衛生紙',
+    description: '雨夜擦臉、擦刀、擦眼淚皆可。務實到近乎幽默。',
+    kind: 'gift',
+  },
 }
 
 /** 約 25 名諧音角色（六部作品切片） */

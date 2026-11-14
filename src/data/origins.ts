@@ -1,6 +1,6 @@
 import type { OriginDef, TechNodeDef } from '../types/game'
 
-/** 六種現代穿越職業——小傳／獨白／過渡敘事寫滿 */
+/** 十二種現代穿越職業——小傳／獨白／過渡敘事寫滿 */
 export const ORIGINS: OriginDef[] = [
   {
     id: 'origin_er_doctor',
@@ -180,6 +180,189 @@ export const ORIGINS: OriginDef[] = [
     },
     startingTechIds: ['tech_gadget_1'],
     startingItemIds: ['gift_measuring_tape'],
+  },
+  {
+    id: 'origin_bahang',
+    name: '八大公關',
+    summary: '八大行業出身：讀空氣、擋酒、圓場——江湖飯局你未必輸。',
+    flavor: '你隨身帶潤喉糖與名片夾。有人以為那是投名狀，其實只是上班工具。',
+    bio: '你在都會夜場做公關／櫃檯領班那一掛：排班、安撫難搞客人、把衝突變成「再來一盤水果」。薪水看營業額，膝蓋看班表。你練就的不是風月，是察言觀色與場面話。',
+    crossoverHook:
+      '打烊盤點到天亮，你靠在吧台閉眼，耳機還播著循環歌單。下一秒霓虹變成雷光，地毯變成泥地——潤喉糖還在口袋，訊號已死。',
+    tags: ['察言觀色', '場面話', '班表戰士'],
+    monologue:
+      '這裡沒有吧台燈，但有刀光與脾氣。先分誰是「難搞貴客」、誰是「自己人」，再談活法。',
+    passiveText:
+      '交際與圓場見長；送禮／攀談較不易冷場。開局銀兩略豐（小費積習）。',
+    startingItemBlurb: '潤喉糖＋名片夾：談生意先甜嗓，再交換「現代奇物」座標。',
+    startingTechBlurb: '起始科技「止血包紮」：擋酒打架看多了，包紮意外地熟。',
+    transitPages: [
+      '領班還在對講機喊：「三位貴客到——」你回「收到」，聲音卻像隔著水箱。',
+      '你想起還沒報的業績、還沒回的家人訊息、還有那雙磨腳的班鞋。',
+      '雨打破廟。你下意識整理衣領、掛上職業笑——然後發現四週沒有客人，只有雷。',
+    ],
+    bonuses: {
+      maxHp: 8,
+      maxStamina: 12,
+      defense: 2,
+      maxInternalForce: 8,
+      inspiration: 7,
+      silver: 45,
+    },
+    startingTechIds: ['tech_med_1'],
+    startingItemIds: ['gift_throat_lozenge', 'gift_namecard_case'],
+  },
+  {
+    id: 'origin_delivery',
+    name: '外送騎手',
+    summary: '風雨無阻送單；地圖感與腿力，是你穿越後的第一門輕功。',
+    flavor: '你還習慣側耳聽「下一單」提示音——這裡只有雨。',
+    bio: '你跑過午高峰與颱風天，學會跟店家吵架也跟演算法和解。超时扣款比刀傷可怕。你的座右銘：先送達，再哲學。',
+    crossoverHook:
+      '你停在紅燈下刷到「系統維護」，頭盔裡一片安靜。再抬頭，交通號誌變成破廟神像，保溫袋還背在肩上。',
+    tags: ['抗風吹', '路徑控', '時效狂'],
+    monologue:
+      '沒有導航，就把星當路標、把刀聲當塞車。活過今晚，算準時配達。',
+    passiveText:
+      '精力與趕路較強；開局即懂「間歇訓練」。旅行耗精略耐操。',
+    startingItemBlurb: '防水披肩扣：外送雨衣精神續作，江湖人當斗篷扣飾。',
+    startingTechBlurb: '起始科技「間歇訓練」：衝刺—休息—再衝刺的肌肉記憶。',
+    transitPages: [
+      'App 還顯示「距離 300 公尺」。你加速——路面卻突然變成泥濘石階。',
+      '你想起差評、油錢、與那句「騎慢一點」。',
+      '破廟裡你下意識看手機：沒單。只有雨。你把披肩扣繫緊，像還要再跑一趟。',
+    ],
+    bonuses: {
+      maxHp: 12,
+      maxStamina: 28,
+      attack: 2,
+      inspiration: 5,
+      silver: 18,
+    },
+    startingTechIds: ['tech_body_1'],
+    startingItemIds: ['gift_rain_cape_pin'],
+  },
+  {
+    id: 'origin_streamer',
+    name: '直播主',
+    summary: '鏡頭感與臨場反應一流；穿越後仍下意識想「跟觀眾打招呼」。',
+    flavor: '你口袋裡有迷你補光燈。江湖人問：這是不是妖火？',
+    bio: '你做過遊戲實況、雜談、帶貨。演算法是喜怒無常的門派掌門，禮物聲是江湖排名。你最怕的不是黑粉，是斷網。',
+    crossoverHook:
+      '深夜檔最後一段，你說「我們下週見」——然後真的「下線」到另一個世界。補光燈還亮著，彈幕沒了。',
+    tags: ['臨場感', '話術', '流量直覺'],
+    monologue:
+      '沒有訂閱數，但有生死。先別開播，先別死；素材可以以後再剪。',
+    passiveText:
+      '話術與吸引注意較佳；靈感獲取略快。開局帶迷你補光（夜戰唬人用）。',
+    startingItemBlurb: '迷你補光燈：電力有限，卻能在暗處製造「妖光乍現」。',
+    startingTechBlurb: '起始科技「手電筒戰術」：你本來就靠光吃飯。',
+    transitPages: [
+      '禮物音效還在耳裡循環。你笑著道謝，視野卻開始像素化。',
+      '你想起沒簽的商案、沒睡的白天、還有那句「真實一點會更紅」。',
+      '雨夜破廟。你下意識對空氣說：「哈囉大家好——」回音裡只有自己。',
+    ],
+    bonuses: {
+      maxStamina: 14,
+      maxInternalForce: 12,
+      attack: 1,
+      defense: 1,
+      inspiration: 11,
+      silver: 22,
+    },
+    startingTechIds: ['tech_gadget_1'],
+    startingItemIds: ['gift_mini_light'],
+  },
+  {
+    id: 'origin_lawyer',
+    name: '律師',
+    summary: '條款、舉證、冷靜對質；談判桌比比武台更像你的主場。',
+    flavor: '你穿越時握著簽字筆。有人以為那是短刺。',
+    bio: '你做過諮詢、和解、也開過庭。你相信程序正義——至少在公文格式上。加班寫書狀的夜晚，比任何武俠劇漫長。',
+    crossoverHook:
+      '截稿式的答辯期限前，你在事務所沙發上闔眼。再醒，卷宗變成濕葉，筆還在，法典不在。',
+    tags: ['邏輯抗辯', '邊界感', '條款控'],
+    monologue:
+      '這裡的「規矩」寫在刀上。先搞清楚誰有管轄權，再決定和解或开战。',
+    passiveText:
+      '談判與情報整理見長；悟性向加成。面對門派條款／契約事件較不易被唬。',
+    startingItemBlurb: '簽字筆與便箋：可寫「現代契約條款」唬人，也可當細短鐵籤。',
+    startingTechBlurb: '起始科技「止血包紮」：法務社團急救訓意外派上用場。',
+    transitPages: [
+      '你還在心裡排「爭點一、爭點二」。雨聲把法官的木槌敲成雷。',
+      '你想起客戶、助理、與那封未送的意見信。',
+      '破廟石階如證人席。你把便箋按平，寫下第一行：本件事實仍有爭議。',
+    ],
+    bonuses: {
+      maxHp: 8,
+      maxInternalForce: 14,
+      defense: 3,
+      inspiration: 10,
+      silver: 28,
+    },
+    startingTechIds: ['tech_med_1'],
+    startingItemIds: ['gift_contract_pen'],
+  },
+  {
+    id: 'origin_cabin',
+    name: '空服員',
+    summary: '緊急程序、微笑服務、時差耐力；亂流裡練出的鎮定可搬家到江湖。',
+    flavor: '你還會下意識做安全示範手勢。刀客一臉茫然。',
+    bio: '你背過安全手冊、安撫過暈機乘客、也在紅眼班機裡偷站著睡覺。你的超能力是：再累也能把語氣維持在「標準溫度」。',
+    crossoverHook:
+      ' descending後你在跳機點閉眼三秒。再睜眼，滑道變成泥坡，廣播變成雨——過夜包還在。',
+    tags: ['程序控', '溫柔強硬', '時差耐性'],
+    monologue:
+      '沒有氧氣面罩，但有呼吸。先確保自己清醒，再協助鄰座——啊不，鄰座是陌生江湖。',
+    passiveText:
+      '體力與穩定度佳；開局即懂「間歇訓練」。團隊輔佐時較能安撫氣氛。',
+    startingItemBlurb: '過夜盥洗小包：香皂片、隱形眼鏡盒與薄荷糖，江湖當奇物禮盒。',
+    startingTechBlurb: '起始科技「間歇訓練」：長途航班的站姿與腳力遺產。',
+    transitPages: [
+      '「請繫好安全帶」還在腦內自動播放。座椅震動變成雷響。',
+      '你想起班表、時差、與那句「客人永遠是對的」（你從不信）。',
+      '破廟漏雨如客艙漏水。你打開過夜包，清點：能用的，都帶著。',
+    ],
+    bonuses: {
+      maxHp: 14,
+      maxStamina: 20,
+      defense: 2,
+      inspiration: 6,
+      silver: 24,
+    },
+    startingTechIds: ['tech_body_1'],
+    startingItemIds: ['gift_amenity_kit'],
+  },
+  {
+    id: 'origin_unemployed',
+    name: '無業',
+    summary: '待業、被裁、或主動躺平——現代空白檔期，意外變成江湖新手光環。',
+    flavor: '你口袋裡只剩便利商店點數卡與半包衛生紙。江湖人問：這可是什麼令牌？',
+    bio: '你剛結束一段合約／被優退／或乾脆決定「先休息一個季度」。履歷投到麻木，面試話術背到反胃。你學會用最少的錢把一天過完：圖書館冷氣、免費wifi、泡麵哲學。別人說躺平，你說資源配置。',
+    crossoverHook:
+      '又一個「感謝您的應徵」郵件彈出時，你把手機扣在胸口睡著。再醒，拒絕信變成雨，便利商店點數卡還在——只是刷不了。',
+    tags: ['彈性工時', '低成本生存', '意外 lag 高手'],
+    monologue:
+      '沒有班要上，反而冷靜。先活過今晚；就業市場的殘酷，你已經預修過了。',
+    passiveText:
+      '開銷觀念極佳，遇事不易慌；靈感來自「空窗期亂讀」。銀兩起步偏低，但悟性／根骨有空白優勢。',
+    startingItemBlurb: '便利商店點數卡＋半包衛生紙：現代遺跡，送禮時意外好笑又好用。',
+    startingTechBlurb: '起始科技「手電筒戰術」：省錢夜遊與停電對策練出來的。',
+    transitPages: [
+      '信箱還顯示「已讀不回」。你想回「好的謝謝」，手指抬不起來。',
+      '你想起房租、健保、與那句「先回家住一陣子」。',
+      '雨夜破廟。你清點口袋：點數卡、衛生紙、勇氣——第三樣勉強及格。',
+    ],
+    bonuses: {
+      maxHp: 10,
+      maxStamina: 15,
+      maxInternalForce: 10,
+      defense: 1,
+      inspiration: 9,
+      silver: 5,
+    },
+    startingTechIds: ['tech_gadget_1'],
+    startingItemIds: ['gift_point_card', 'gift_tissue_pack'],
   },
 ]
 

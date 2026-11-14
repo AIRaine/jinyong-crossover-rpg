@@ -72,7 +72,8 @@ export function OriginSelect({ onSelect }: OriginSelectProps) {
           {step === 'confirm' && '墜入襄揚之前'}
         </h1>
         <p className="mt-1 text-xs leading-relaxed text-paper/55">
-          {step === 'pick' && '點卡片展開小傳；確認職業後才進入下一頁。'}
+          {step === 'pick' &&
+            '共 12 種現代身份，可捲動瀏覽；點卡片展開小傳後再確認。'}
           {step === 'identity' && '性別與暱稱可之後在人物頁再改。'}
           {step === 'transit' && '加班、猝死或異變——請慢慢讀完，再進破廟。'}
           {step === 'confirm' && '最後確認。確認後寫入存檔，破廟序章開始。'}
