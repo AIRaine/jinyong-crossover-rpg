@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { ORIGINS } from '../data/origins'
+import { ORIGINS, getOriginDisplayName } from '../data/origins'
 import {
   PLAYER_GENDER_LABEL,
   type OriginDef,
@@ -8,6 +8,7 @@ import {
 
 export interface OriginSelectPayload {
   originId: string
+  jobTitle: string
   playerName: string
   gender: PlayerGender
 }
@@ -16,17 +17,18 @@ interface OriginSelectProps {
   onSelect: (payload: OriginSelectPayload) => void
 }
 
-type Step = 'pick' | 'identity' | 'transit' | 'confirm'
+type Step = 'pick' | 'job' | 'identity' | 'transit' | 'confirm'
 
 const SHARED_LANDING = [
   '雨變大了。遠方隱約有城火與刀聲——有人會把那座邊城叫做襄揚。',
-  '你還不是江湖人。你只是一個剛從加班、螢幕與心跳監測裡被抽離的現代人。',
+  '你還不是江湖人。你只是一個剛從現代日程裡被抽離的人。',
 ]
 
 export function OriginSelect({ onSelect }: OriginSelectProps) {
   const [step, setStep] = useState<Step>('pick')
   const [expandedId, setExpandedId] = useState<string | null>(null)
   const [pickedId, setPickedId] = useState<string | null>(null)
+  const [jobTitle, setJobTitle] = useState('')
   const [gender, setGender] = useState<PlayerGender>('unspecified')
   const [nickname, setNickname] = useState('')
   const [page, setPage] = useState(0)
@@ -42,23 +44,17 @@ export function OriginSelect({ onSelect }: OriginSelectProps) {
   }, [origin])
 
   const displayName = nickname.trim() || '無名穿越客'
+  const jobDisplay = getOriginDisplayName({
+    originId: pickedId,
+    originJobTitle: jobTitle,
+  })
 
-  const goIdentity = (id: string) => {
+  const goJob = (id: string) => {
+    const cat = ORIGINS.find((o) => o.id === id)
     setPickedId(id)
-    setStep('identity')
-  }
-
-  const goTransit = () => {
-    setPage(0)
-    setStep('transit')
-  }
-
-  const advanceTransit = () => {
-    if (page >= transitPages.length - 1) {
-      setStep('confirm')
-      return
-    }
-    setPage((p) => p + 1)
+    setJobTitle('')
+    if (cat) setExpandedId(id)
+    setStep('job')
   }
 
   return (
@@ -66,17 +62,20 @@ export function OriginSelect({ onSelect }: OriginSelectProps) {
       <div className="shrink-0 border-b border-cinnabar/30 px-4 pb-3 pt-[max(0.75rem,env(safe-area-inset-top))] text-center">
         <p className="text-[11px] tracking-[0.2em] text-cinnabar-soft">開局</p>
         <h1 className="font-display text-xl text-paper">
-          {step === 'pick' && '你穿越前是誰？'}
+          {step === 'pick' && '你來自哪一大類？'}
+          {step === 'job' && '具體做什麼？'}
           {step === 'identity' && '你想被怎麼稱呼？'}
           {step === 'transit' && '異變發生了'}
           {step === 'confirm' && '墜入襄揚之前'}
         </h1>
         <p className="mt-1 text-xs leading-relaxed text-paper/55">
           {step === 'pick' &&
-            '共 12 種現代身份，可捲動瀏覽；點卡片展開小傳後再確認。'}
-          {step === 'identity' && '性別與暱稱可之後在人物頁再改。'}
-          {step === 'transit' && '加班、猝死或異變——請慢慢讀完，再進破廟。'}
-          {step === 'confirm' && '最後確認。確認後寫入存檔，破廟序章開始。'}
+            '約十個大類決定天賦；八大與無業也在其中。可捲動展開。'}
+          {step === 'job' &&
+            '自填職稱可空白——空白則用大類預設名。'}
+          {step === 'identity' && '性別與暱稱可之後再改。'}
+          {step === 'transit' && '請慢慢讀完，再進破廟。'}
+          {step === 'confirm' && '確認後寫入存檔，序章開始。'}
         </p>
         <StepDots step={step} />
       </div>
@@ -92,17 +91,56 @@ export function OriginSelect({ onSelect }: OriginSelectProps) {
               onToggle={() =>
                 setExpandedId((cur) => (cur === o.id ? null : o.id))
               }
-              onChoose={() => goIdentity(o.id)}
+              onChoose={() => goJob(o.id)}
             />
           ))}
+        </div>
+      )}
+
+      {step === 'job' && origin && (
+        <div className="flex flex-1 flex-col overflow-y-auto px-4 py-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
+          <p className="text-sm text-paper/80">
+            大類：
+            <span className="font-display text-paper"> {origin.name}</span>
+          </p>
+          <p className="mt-1 text-xs text-paper/50">{origin.summary}</p>
+          <label className="mt-4 block text-xs text-paper/55">
+            具體工作／身分（可空白）
+          </label>
+          <input
+            type="text"
+            maxLength={20}
+            value={jobTitle}
+            onChange={(e) => setJobTitle(e.target.value)}
+            placeholder={`例如：${origin.defaultJobTitle}、自由接案…`}
+            className="touch-btn mt-1 w-full rounded-xl border border-paper/15 bg-ink-900 px-3 py-3 text-sm text-paper outline-none focus:border-cinnabar/50"
+          />
+          <p className="mt-2 text-[11px] text-paper/40">
+            預覽顯示：{jobDisplay}
+          </p>
+          <div className="mt-auto flex gap-2 pt-6">
+            <button
+              type="button"
+              onClick={() => setStep('pick')}
+              className="touch-btn flex-1 rounded-xl bg-paper/10 py-3 text-sm text-paper"
+            >
+              返回
+            </button>
+            <button
+              type="button"
+              onClick={() => setStep('identity')}
+              className="touch-btn flex-[1.4] rounded-xl bg-cinnabar/90 py-3 text-sm text-paper"
+            >
+              下一步
+            </button>
+          </div>
         </div>
       )}
 
       {step === 'identity' && origin && (
         <div className="flex flex-1 flex-col overflow-y-auto px-4 py-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
           <p className="text-sm text-paper/80">
-            已選職業：
-            <span className="font-display text-paper"> {origin.name}</span>
+            {origin.name} · {jobDisplay}
           </p>
           <label className="mt-4 block text-xs text-paper/55">江湖暱稱</label>
           <input
@@ -133,14 +171,17 @@ export function OriginSelect({ onSelect }: OriginSelectProps) {
           <div className="mt-auto flex gap-2 pt-6">
             <button
               type="button"
-              onClick={() => setStep('pick')}
+              onClick={() => setStep('job')}
               className="touch-btn flex-1 rounded-xl bg-paper/10 py-3 text-sm text-paper"
             >
               返回
             </button>
             <button
               type="button"
-              onClick={goTransit}
+              onClick={() => {
+                setPage(0)
+                setStep('transit')
+              }}
               className="touch-btn flex-[1.4] rounded-xl bg-cinnabar/90 py-3 text-sm text-paper"
             >
               進入異變
@@ -164,7 +205,7 @@ export function OriginSelect({ onSelect }: OriginSelectProps) {
               {transitPages[page]}
             </p>
             <p className="mt-auto pt-8 text-[11px] text-paper/40">
-              {origin.name} · {displayName}
+              {jobDisplay} · {displayName}
             </p>
           </div>
           <div className="relative z-10 flex gap-2 px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-2">
@@ -177,7 +218,10 @@ export function OriginSelect({ onSelect }: OriginSelectProps) {
             </button>
             <button
               type="button"
-              onClick={advanceTransit}
+              onClick={() => {
+                if (page >= transitPages.length - 1) setStep('confirm')
+                else setPage((p) => p + 1)
+              }}
               className="touch-btn flex-[1.6] rounded-xl bg-cinnabar/90 py-3 text-sm text-paper"
             >
               {page >= transitPages.length - 1 ? '醒來' : '繼續'}
@@ -190,24 +234,20 @@ export function OriginSelect({ onSelect }: OriginSelectProps) {
         <div className="flex flex-1 flex-col overflow-y-auto px-4 py-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
           <div className="rounded-2xl border border-amber-700/40 bg-amber-950/25 p-4">
             <p className="font-display text-lg leading-relaxed text-amber-50">
-              你將以「{origin.name}·{displayName}」身份墜入襄揚雨夜破廟。
+              你將以「{jobDisplay}·{displayName}」身份墜入襄揚雨夜破廟。
             </p>
             <p className="mt-2 text-xs text-paper/55">
-              性別：{PLAYER_GENDER_LABEL[gender]}
+              大類 {origin.name}｜性別 {PLAYER_GENDER_LABEL[gender]}
             </p>
           </div>
           <div className="mt-3 space-y-2 rounded-xl border border-paper/10 bg-ink-900/70 p-3 text-xs leading-relaxed text-paper/70">
             <p>{origin.passiveText}</p>
             <p className="text-paper/50">{origin.startingItemBlurb}</p>
-            <p className="text-paper/50">{origin.startingTechBlurb}</p>
             <p className="text-amber-200/80">
               靈感 +{origin.bonuses.inspiration ?? 0}
               {origin.bonuses.silver ? ` · 銀兩 +${origin.bonuses.silver}` : ''}
             </p>
           </div>
-          <p className="mt-3 text-[11px] leading-relaxed text-paper/45">
-            確認後不會瞬間變成大俠——你會先在破廟面對序章抉擇。
-          </p>
           <div className="mt-auto flex gap-2 pt-6">
             <button
               type="button"
@@ -224,6 +264,7 @@ export function OriginSelect({ onSelect }: OriginSelectProps) {
               onClick={() =>
                 onSelect({
                   originId: origin.id,
+                  jobTitle: jobTitle.trim().slice(0, 20),
                   playerName: displayName.slice(0, 12),
                   gender,
                 })
@@ -240,7 +281,7 @@ export function OriginSelect({ onSelect }: OriginSelectProps) {
 }
 
 function StepDots({ step }: { step: Step }) {
-  const order: Step[] = ['pick', 'identity', 'transit', 'confirm']
+  const order: Step[] = ['pick', 'job', 'identity', 'transit', 'confirm']
   const idx = order.indexOf(step)
   return (
     <div className="mt-2 flex justify-center gap-1.5">
@@ -271,10 +312,8 @@ function OriginCard({
 }) {
   return (
     <article
-      className={`rounded-xl border bg-ink-900/90 text-left transition ${
-        selected
-          ? 'border-cinnabar/50'
-          : 'border-paper/15'
+      className={`rounded-xl border bg-ink-900/90 text-left ${
+        selected ? 'border-cinnabar/50' : 'border-paper/15'
       }`}
     >
       <button
@@ -302,43 +341,29 @@ function OriginCard({
           ))}
         </span>
       </button>
-
       {expanded && (
         <div className="space-y-2 border-t border-paper/10 px-4 py-3 text-xs leading-relaxed text-paper/65">
           <p>
-            <span className="text-paper/40">小傳　</span>
+            <span className="text-paper/40">原型　</span>
             {origin.bio}
           </p>
           <p>
-            <span className="text-paper/40">契機　</span>
-            {origin.crossoverHook}
-          </p>
-          <p>
-            <span className="text-paper/40">被動　</span>
+            <span className="text-paper/40">天賦　</span>
             {origin.passiveText}
           </p>
           <p>
-            <span className="text-paper/40">道具　</span>
+            <span className="text-paper/40">初始　</span>
             {origin.startingItemBlurb}
-          </p>
-          <p>
-            <span className="text-paper/40">科技　</span>
-            {origin.startingTechBlurb}
-          </p>
-          <p className="text-amber-200/80">
-            靈感 +{origin.bonuses.inspiration ?? 0}
-            {origin.bonuses.silver ? ` · 銀兩 +${origin.bonuses.silver}` : ''}
           </p>
           <button
             type="button"
             onClick={onChoose}
             className="touch-btn mt-1 w-full rounded-lg bg-cinnabar/90 py-3 text-sm text-paper"
           >
-            以「{origin.name}」繼續
+            選擇「{origin.name}」
           </button>
         </div>
       )}
-
       {!expanded && (
         <div className="border-t border-paper/10 px-4 py-2">
           <button
@@ -346,7 +371,7 @@ function OriginCard({
             onClick={onChoose}
             className="touch-btn w-full rounded-lg bg-paper/10 py-2.5 text-xs text-paper/85"
           >
-            選擇此職業
+            選擇此大類
           </button>
         </div>
       )}

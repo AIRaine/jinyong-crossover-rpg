@@ -102,6 +102,7 @@ export function createInitialGameState(): GameState {
     lastOutcomeText: null,
     originChosen: false,
     originId: null,
+    originJobTitle: '',
     playerGender: 'unspecified',
     inspiration: 0,
     knownLocationIds: ['loc_broken_temple'],

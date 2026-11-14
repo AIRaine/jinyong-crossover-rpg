@@ -1,5 +1,5 @@
 /** 存檔結構版本；變更欄位時遞增並在 migrateSaveData 處理 */
-export const SAVE_VERSION = 5 as const
+export const SAVE_VERSION = 6 as const
 
 /** 底部分頁 */
 export type TabId =
@@ -61,7 +61,7 @@ export const PLAYER_GENDER_LABEL: Record<PlayerGender, string> = {
   unspecified: '不便透露／皆可',
 }
 
-/** 現代穿越職業 */
+/** 現代穿越職業大類（天賦原型；具體職稱可自填） */
 export interface OriginDef {
   id: string
   name: string
@@ -83,6 +83,10 @@ export interface OriginDef {
   startingTechBlurb: string
   /** 過渡敘事頁（加班猝死／異變 → 墜入雨夜） */
   transitPages: string[]
+  /** 自填空白時的預設職稱 */
+  defaultJobTitle: string
+  comprehensionBonus?: number
+  rootBoneBonus?: number
   bonuses: Partial<
     Pick<
       PlayerStats,
@@ -384,7 +388,10 @@ export interface GameState {
   lastCombatResult: CombatPlaceholderResult | null
   lastOutcomeText: string | null
   originChosen: boolean
+  /** 大類 id（舊細職會在 migrate 映射） */
   originId: string | null
+  /** 玩家自填具體工作／身分；空白則顯示大類預設名 */
+  originJobTitle: string
   /** 開局性別（敘事／稱呼用） */
   playerGender: PlayerGender
   inspiration: number

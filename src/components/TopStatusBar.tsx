@@ -1,3 +1,4 @@
+import { getOriginDisplayName } from '../data/origins'
 import { DAY_PERIOD_LABEL, type GameState } from '../types/game'
 import { computePanelStats } from '../lib/combatStats'
 
@@ -38,6 +39,14 @@ export function TopStatusBar({ state, onOpenQuests }: TopStatusBarProps) {
       <div className="mb-2 flex items-start justify-between gap-2">
         <div className="min-w-0 text-left">
           <p className="font-display text-base leading-tight text-paper">{playerName}</p>
+          {state.originChosen && (
+            <p className="truncate text-[11px] text-amber-100/70">
+              {getOriginDisplayName({
+                originId: state.originId,
+                originJobTitle: state.originJobTitle,
+              })}
+            </p>
+          )}
           <p className="truncate text-[11px] text-paper/60">
             {locationName} · {timeText}
           </p>

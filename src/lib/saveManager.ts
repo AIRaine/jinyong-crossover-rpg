@@ -5,6 +5,10 @@ import {
   type SaveSlotMeta,
 } from '../types/game'
 import { createInitialGameState } from '../data/initialState'
+import {
+  LEGACY_ORIGIN_JOB_TITLE,
+  resolveOriginCategoryId,
+} from '../data/origins'
 import { NPCS } from '../data/npcs'
 import { grantStarterGear } from './starterGear'
 
@@ -82,6 +86,8 @@ export function migrateSaveData(raw: unknown): GameState {
         : data.lastOutcomeText,
     originChosen: Boolean(data.originChosen),
     originId: data.originId ?? null,
+    originJobTitle:
+      typeof data.originJobTitle === 'string' ? data.originJobTitle : '',
     playerGender:
       data.playerGender === 'male' ||
       data.playerGender === 'female' ||
@@ -246,6 +252,31 @@ export function migrateSaveData(raw: unknown): GameState {
     if (typeof migrated.sparWins !== 'number') migrated.sparWins = 0
     if (!Array.isArray(migrated.cosmetics)) migrated.cosmetics = []
     if (typeof migrated.ngPlusReady !== 'boolean') migrated.ngPlusReady = false
+  }
+
+  // v5 → v6：細職 → 大類＋自填職稱
+  if (version < 6 || migrated.originId?.startsWith('origin_')) {
+    const rawId = migrated.originId
+    if (rawId && rawId.startsWith('origin_')) {
+      if (!migrated.originJobTitle) {
+        migrated.originJobTitle = LEGACY_ORIGIN_JOB_TITLE[rawId] ?? ''
+      }
+      const mapped = resolveOriginCategoryId(rawId)
+      if (mapped) migrated.originId = mapped
+    }
+    if (typeof migrated.originJobTitle !== 'string') {
+      migrated.originJobTitle = ''
+    }
+    if (
+      migrated.originChosen &&
+      migrated.originJobTitle &&
+      !migrated.flags.originName
+    ) {
+      migrated.flags = {
+        ...migrated.flags,
+        originName: migrated.originJobTitle,
+      }
+    }
   }
 
   migrated.version = SAVE_VERSION

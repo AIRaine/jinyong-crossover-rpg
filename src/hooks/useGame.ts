@@ -146,6 +146,7 @@ export function useGame() {
   const selectOrigin = useCallback(
     async (payload: {
       originId: string
+      jobTitle: string
       playerName: string
       gender: PlayerGender
     }) => {
@@ -195,37 +196,20 @@ export function useGame() {
         }
       })
 
-      // 職業微調悟性／根骨
-      let comprehension = state.comprehension
-      let rootBone = state.rootBone
-      if (
-        payload.originId === 'origin_engineer' ||
-        payload.originId === 'origin_reporter' ||
-        payload.originId === 'origin_lawyer' ||
-        payload.originId === 'origin_streamer'
-      ) {
-        comprehension += 10
-      }
-      if (
-        payload.originId === 'origin_coach' ||
-        payload.originId === 'origin_civil' ||
-        payload.originId === 'origin_delivery' ||
-        payload.originId === 'origin_cabin'
-      ) {
-        rootBone += 10
-      }
-      if (payload.originId === 'origin_er_doctor') comprehension += 5
-      if (payload.originId === 'origin_bahang') {
-        comprehension += 5
-        rootBone += 3
-      }
-      if (payload.originId === 'origin_unemployed') {
-        comprehension += 8
-        rootBone += 5
-      }
+      const comprehension = Math.min(
+        99,
+        state.comprehension + (origin.comprehensionBonus ?? 0),
+      )
+      const rootBone = Math.min(
+        99,
+        state.rootBone + (origin.rootBoneBonus ?? 0),
+      )
 
       const playerName =
         payload.playerName.trim().slice(0, 12) || '無名穿越客'
+      const originJobTitle = payload.jobTitle.trim().slice(0, 20)
+      const displayJob =
+        originJobTitle || origin.defaultJobTitle || origin.name
 
       const next: GameState = {
         ...state,
@@ -233,6 +217,7 @@ export function useGame() {
         playerGender: payload.gender,
         originChosen: true,
         originId: origin.id,
+        originJobTitle,
         stats,
         techTree,
         inventory,
@@ -247,13 +232,16 @@ export function useGame() {
         rootBone,
         flags: {
           ...state.flags,
-          originName: origin.name,
+          originName: displayJob,
+          originCategory: origin.name,
           openingTransitDone: true,
         },
       }
       persist(next)
       playSound('success')
-      showToast(`你以${origin.name}之身墜入雨夜。靈感 +${bonuses.inspiration ?? 0}`)
+      showToast(
+        `你以「${displayJob}」之身墜入雨夜。靈感 +${bonuses.inspiration ?? 0}`,
+      )
       setStatusMsg('異變已過。破廟序章開始——請在遊歷作出抉擇。')
       setTab('travel')
     },
