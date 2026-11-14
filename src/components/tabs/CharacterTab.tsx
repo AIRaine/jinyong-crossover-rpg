@@ -55,9 +55,20 @@ export function CharacterTab({
         <h2 className="font-display text-xl text-paper">人物</h2>
         <p className="mt-1 text-xs text-paper/55">
           {origin
-            ? `現代職業：${origin.name}`
+            ? `現代職業：${origin.name}｜${
+                state.playerGender === 'male'
+                  ? '男'
+                  : state.playerGender === 'female'
+                    ? '女'
+                    : '不便透露'
+              }`
             : '尚未選定職業——請先完成開局。'}
         </p>
+        {origin?.monologue && (
+          <p className="mt-2 text-[11px] leading-relaxed text-paper/45">
+            「{origin.monologue}」
+          </p>
+        )}
         <label className="mt-4 block text-xs text-paper/60">江湖稱謂</label>
         <form
           className="mt-1 flex gap-2"

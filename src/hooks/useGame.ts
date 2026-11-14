@@ -73,6 +73,7 @@ import {
   type GameState,
   type InventoryItem,
   type OwnedEquipment,
+  type PlayerGender,
   type SaveSlotId,
   type StoryChoice,
   type StoryEventChoiceDef,
@@ -143,9 +144,13 @@ export function useGame() {
   )
 
   const selectOrigin = useCallback(
-    async (originId: string) => {
+    async (payload: {
+      originId: string
+      playerName: string
+      gender: PlayerGender
+    }) => {
       await ensureAudio()
-      const origin = getOriginById(originId)
+      const origin = getOriginById(payload.originId)
       if (!origin || state.originChosen) return
 
       const bonuses = origin.bonuses
@@ -193,16 +198,27 @@ export function useGame() {
       // 職業微調悟性／根骨
       let comprehension = state.comprehension
       let rootBone = state.rootBone
-      if (originId === 'origin_engineer' || originId === 'origin_reporter') {
+      if (
+        payload.originId === 'origin_engineer' ||
+        payload.originId === 'origin_reporter'
+      ) {
         comprehension += 10
       }
-      if (originId === 'origin_coach' || originId === 'origin_civil') {
+      if (
+        payload.originId === 'origin_coach' ||
+        payload.originId === 'origin_civil'
+      ) {
         rootBone += 10
       }
-      if (originId === 'origin_er_doctor') comprehension += 5
+      if (payload.originId === 'origin_er_doctor') comprehension += 5
+
+      const playerName =
+        payload.playerName.trim().slice(0, 12) || '無名穿越客'
 
       const next: GameState = {
         ...state,
+        playerName,
+        playerGender: payload.gender,
         originChosen: true,
         originId: origin.id,
         stats,
@@ -220,12 +236,13 @@ export function useGame() {
         flags: {
           ...state.flags,
           originName: origin.name,
+          openingTransitDone: true,
         },
       }
       persist(next)
       playSound('success')
-      showToast(`職業選定：${origin.name}。靈感 +${bonuses.inspiration ?? 0}`)
-      setStatusMsg('職業已記入存檔。破廟危局再現——請在遊歷作出抉擇。')
+      showToast(`你以${origin.name}之身墜入雨夜。靈感 +${bonuses.inspiration ?? 0}`)
+      setStatusMsg('異變已過。破廟序章開始——請在遊歷作出抉擇。')
       setTab('travel')
     },
     [ensureAudio, persist, showToast, state],

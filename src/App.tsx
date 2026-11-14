@@ -124,7 +124,13 @@ export default function App() {
           onClose={() => game.setQuestOpen(false)}
         />
 
-        {showOrigin && <OriginSelect onSelect={game.selectOrigin} />}
+        {showOrigin && (
+          <OriginSelect
+            onSelect={(payload) => {
+              void game.selectOrigin(payload)
+            }}
+          />
+        )}
 
         {game.combat && (
           <CombatModal

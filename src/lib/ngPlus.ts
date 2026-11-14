@@ -18,6 +18,7 @@ export function applyNewGamePlus(prev: GameState): GameState {
   return {
     ...fresh,
     playerName: prev.playerName,
+    playerGender: prev.playerGender,
     currency: {
       silver: 80 + prev.ngPlusCount * 20,
       yuanbao: keepYuanbao,

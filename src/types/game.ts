@@ -52,12 +52,37 @@ export interface PlayerStats {
   exp: number
 }
 
+/** 開局可選性別（敘事用，不鎖數值） */
+export type PlayerGender = 'male' | 'female' | 'unspecified'
+
+export const PLAYER_GENDER_LABEL: Record<PlayerGender, string> = {
+  male: '男',
+  female: '女',
+  unspecified: '不便透露／皆可',
+}
+
 /** 現代穿越職業 */
 export interface OriginDef {
   id: string
   name: string
   summary: string
   flavor: string
+  /** 穿越前職場小傳 */
+  bio: string
+  /** 死因或穿越契機 */
+  crossoverHook: string
+  /** 性格標籤（短詞） */
+  tags: string[]
+  /** 選定後開場獨白 */
+  monologue: string
+  /** 被動／職業優勢說明 */
+  passiveText: string
+  /** 初始道具說明 */
+  startingItemBlurb: string
+  /** 起始科技說明 */
+  startingTechBlurb: string
+  /** 過渡敘事頁（加班猝死／異變 → 墜入雨夜） */
+  transitPages: string[]
   bonuses: Partial<
     Pick<
       PlayerStats,
@@ -360,6 +385,8 @@ export interface GameState {
   lastOutcomeText: string | null
   originChosen: boolean
   originId: string | null
+  /** 開局性別（敘事／稱呼用） */
+  playerGender: PlayerGender
   inspiration: number
   knownLocationIds: string[]
   /** 階段三：裝備 */

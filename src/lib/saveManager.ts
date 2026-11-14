@@ -82,6 +82,12 @@ export function migrateSaveData(raw: unknown): GameState {
         : data.lastOutcomeText,
     originChosen: Boolean(data.originChosen),
     originId: data.originId ?? null,
+    playerGender:
+      data.playerGender === 'male' ||
+      data.playerGender === 'female' ||
+      data.playerGender === 'unspecified'
+        ? data.playerGender
+        : base.playerGender,
     inspiration:
       typeof data.inspiration === 'number' ? data.inspiration : base.inspiration,
     knownLocationIds: Array.isArray(data.knownLocationIds)
