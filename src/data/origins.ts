@@ -1,0 +1,263 @@
+import type { OriginDef, TechNodeDef } from '../types/game'
+
+/** 六種現代穿越職業 */
+export const ORIGINS: OriginDef[] = [
+  {
+    id: 'origin_er_doctor',
+    name: '急診醫師',
+    summary: '止血包紮信手拈來，雨夜破廟也能開臨時診療。',
+    flavor: '你穿越時還掛著聽診器。江湖人以為那是奇特的護心鏡。',
+    bonuses: {
+      maxHp: 20,
+      maxStamina: 10,
+      defense: 2,
+      inspiration: 8,
+      silver: 20,
+    },
+    startingTechIds: ['tech_med_1'],
+    startingItemIds: ['gift_herb_kit'],
+  },
+  {
+    id: 'origin_engineer',
+    name: '資訊工程師',
+    summary: '邏輯清晰，善拆機關；手機沒訊號也能當手電筒。',
+    flavor: '你習慣把問題拆成可重現的步驟——哪怕對方是一把鐵門。',
+    bonuses: {
+      maxInternalForce: 15,
+      attack: 2,
+      inspiration: 10,
+      silver: 15,
+    },
+    startingTechIds: ['tech_gadget_1'],
+    startingItemIds: ['gift_blueprint'],
+  },
+  {
+    id: 'origin_coach',
+    name: '體育教練',
+    summary: '體能底子厚，短跑、負重、呼吸節奏皆有章法。',
+    flavor: '你第一反應不是怕刀，而是想糾正對方的出拳重心。',
+    bonuses: {
+      maxHp: 15,
+      maxStamina: 25,
+      attack: 3,
+      inspiration: 6,
+      silver: 10,
+    },
+    startingTechIds: ['tech_body_1'],
+    startingItemIds: ['gift_protein_bar'],
+  },
+  {
+    id: 'origin_reporter',
+    name: '新聞記者',
+    summary: '擅長打聽、記錄與拆穿謊言，人脈比拳頭快半步。',
+    flavor: '你口袋裡永遠有原子筆——在這時代，它被當成細短的鐵籤。',
+    bonuses: {
+      maxStamina: 10,
+      maxInternalForce: 10,
+      defense: 1,
+      inspiration: 9,
+      silver: 25,
+    },
+    startingTechIds: ['tech_med_1'],
+    startingItemIds: ['gift_ink_notes'],
+  },
+  {
+    id: 'origin_chef',
+    name: '餐飲廚師',
+    summary: '一把鍋鏟安天下；人情往往從一碗熱湯開始。',
+    flavor: '你相信大多數恩怨，只要火候對了，就能談。',
+    bonuses: {
+      maxHp: 10,
+      maxStamina: 15,
+      defense: 3,
+      inspiration: 7,
+      silver: 30,
+    },
+    startingTechIds: ['tech_med_1'],
+    startingItemIds: ['gift_spice_pouch'],
+  },
+  {
+    id: 'origin_civil',
+    name: '土木技師',
+    summary: '懂結構、懂承重；破廟漏雨你第一眼先看樑柱。',
+    flavor: '你穿越前最後一份圖紙，是橋梁加固——如今腳下這座破廟，也像待修的標案。',
+    bonuses: {
+      maxHp: 15,
+      defense: 4,
+      maxInternalForce: 5,
+      inspiration: 8,
+      silver: 20,
+    },
+    startingTechIds: ['tech_gadget_1'],
+    startingItemIds: ['gift_measuring_tape'],
+  },
+]
+
+/** 十五節點科技樹：三大分支各五階 */
+export const TECH_NODES: TechNodeDef[] = [
+  // —— 現代醫理 ——
+  {
+    id: 'tech_med_1',
+    name: '止血包紮',
+    branch: 'medical',
+    tier: 1,
+    description: '以現代無菌觀念處理刀傷與擦傷。',
+    inspirationCost: 3,
+    requires: [],
+    effectText: '戰鬥後氣血回復小幅提升（後續結算）。',
+  },
+  {
+    id: 'tech_med_2',
+    name: '草藥辨識',
+    branch: 'medical',
+    tier: 2,
+    description: '對照現代藥理，分辨可入藥的江湖草本。',
+    inspirationCost: 4,
+    requires: ['tech_med_1'],
+    effectText: '採藥與治療道具效果提升。',
+  },
+  {
+    id: 'tech_med_3',
+    name: '創傷清創',
+    branch: 'medical',
+    tier: 3,
+    description: '清創、換藥與防感染流程標準化。',
+    inspirationCost: 5,
+    requires: ['tech_med_2'],
+    effectText: '重傷狀態持續時間縮短。',
+  },
+  {
+    id: 'tech_med_4',
+    name: '急救推車思維',
+    branch: 'medical',
+    tier: 4,
+    description: '把戰場當成急診：分級、分流、先救命。',
+    inspirationCost: 6,
+    requires: ['tech_med_3'],
+    effectText: '隊伍輔佐技能冷卻略降。',
+  },
+  {
+    id: 'tech_med_5',
+    name: '久隱呼吸對照',
+    branch: 'medical',
+    tier: 5,
+    description: '以現代呼吸與循環知識解讀《久隱心經》殘篇。',
+    inspirationCost: 8,
+    requires: ['tech_med_4'],
+    effectText: '內力上限提升；解鎖醫武合參路線。',
+  },
+  // —— 機關奇巧 ——
+  {
+    id: 'tech_gadget_1',
+    name: '手電筒戰術',
+    branch: 'gadget',
+    tier: 1,
+    description: '夜戰以強光擾亂視覺，爭取脫身或先手。',
+    inspirationCost: 3,
+    requires: [],
+    effectText: '夜間遭遇先制機率提升。',
+  },
+  {
+    id: 'tech_gadget_2',
+    name: '簡易槓桿',
+    branch: 'gadget',
+    tier: 2,
+    description: '撬門、抬石、機關觸發的力學應用。',
+    inspirationCost: 4,
+    requires: ['tech_gadget_1'],
+    effectText: '秘境互動成功率提升。',
+  },
+  {
+    id: 'tech_gadget_3',
+    name: '火藥替代試作',
+    branch: 'gadget',
+    tier: 3,
+    description: '以現有礦粉與油料調配煙霧與聲響唬敵。',
+    inspirationCost: 5,
+    requires: ['tech_gadget_2'],
+    effectText: '可製作煙霧彈類消耗品。',
+  },
+  {
+    id: 'tech_gadget_4',
+    name: '測距估高',
+    branch: 'gadget',
+    tier: 4,
+    description: '目測距離、落差與弓矢拋物線。',
+    inspirationCost: 6,
+    requires: ['tech_gadget_3'],
+    effectText: '遠程與地形戰優勢。',
+  },
+  {
+    id: 'tech_gadget_5',
+    name: '天機對表',
+    branch: 'gadget',
+    tier: 5,
+    description: '把現代專案管理套進天機閣情報網：里程碑、風險、備援。',
+    inspirationCost: 8,
+    requires: ['tech_gadget_4'],
+    effectText: '任務情報獎勵與靈感獲取提升。',
+  },
+  // —— 身法體能 ——
+  {
+    id: 'tech_body_1',
+    name: '間歇訓練',
+    branch: 'physique',
+    tier: 1,
+    description: '以短衝刺與休息交替鍛鍊耐力。',
+    inspirationCost: 3,
+    requires: [],
+    effectText: '精力上限小幅提升。',
+  },
+  {
+    id: 'tech_body_2',
+    name: '核心穩定',
+    branch: 'physique',
+    tier: 2,
+    description: '強化腰腹，減少出拳與閃避時的晃動。',
+    inspirationCost: 4,
+    requires: ['tech_body_1'],
+    effectText: '防禦與受擊穩定度提升。',
+  },
+  {
+    id: 'tech_body_3',
+    name: '負重行進',
+    branch: 'physique',
+    tier: 3,
+    description: '背包負重下仍能維持步幅與呼吸。',
+    inspirationCost: 5,
+    requires: ['tech_body_2'],
+    effectText: '旅行精力消耗降低。',
+  },
+  {
+    id: 'tech_body_4',
+    name: '反應節奏',
+    branch: 'physique',
+    tier: 4,
+    description: '用口令與節拍訓練躲閃時機。',
+    inspirationCost: 6,
+    requires: ['tech_body_3'],
+    effectText: '閃避與連擊窗口擴大。',
+  },
+  {
+    id: 'tech_body_5',
+    name: '華嶠登頂法',
+    branch: 'physique',
+    tier: 5,
+    description: '針對華嶠陡峭山路的登山節奏與供氧策略。',
+    inspirationCost: 8,
+    requires: ['tech_body_4'],
+    effectText: '山岳地形戰鬥與旅行優勢；攻擊小幅提升。',
+  },
+]
+
+export function getOriginById(id: string): OriginDef | undefined {
+  return ORIGINS.find((o) => o.id === id)
+}
+
+export function getTechNodeById(id: string): TechNodeDef | undefined {
+  return TECH_NODES.find((n) => n.id === id)
+}
+
+export function getTechNodesByBranch(branch: TechNodeDef['branch']): TechNodeDef[] {
+  return TECH_NODES.filter((n) => n.branch === branch).sort((a, b) => a.tier - b.tier)
+}
