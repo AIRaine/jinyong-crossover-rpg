@@ -156,9 +156,12 @@ export function TravelTab({
           <button
             type="button"
             onClick={onAdvanceXun}
-            className="touch-btn rounded-xl bg-cinnabar/90 py-3 text-sm text-paper"
+            className="touch-btn rounded-xl bg-cinnabar/90 px-2 py-2.5 text-sm leading-snug text-paper"
           >
-            推進一旬（2 AP）
+            <span className="block">推進一旬</span>
+            <span className="mt-0.5 block text-[10px] font-normal text-paper/85">
+              耗 2 AP，回 3 AP
+            </span>
           </button>
           <button
             type="button"
@@ -242,7 +245,7 @@ export function TravelTab({
         current?.gather === 'both') && (
         <div className="space-y-2">
           <h3 className="font-display text-sm text-paper/80">
-            採集（1 AP｜目前 {state.actionPoints}/{state.maxActionPoints}）
+            採集（耗 1 AP｜目前 {state.actionPoints}/{state.maxActionPoints} AP）
           </h3>
           <div className="grid grid-cols-2 gap-2">
             {(current.gather === 'herb' || current.gather === 'both') && (
@@ -342,7 +345,7 @@ export function TravelTab({
                       : 'bg-rose-950/50 text-rose-200'
                   }`}
                 >
-                  精力 -{cost}
+                  耗 {cost} 精力
                   {state.travelPassCharges > 0 ? '（通票）' : ''}
                 </span>
               </button>

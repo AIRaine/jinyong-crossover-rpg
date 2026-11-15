@@ -128,7 +128,7 @@ export function ShopTab({
                   <p className="mt-1 text-xs text-paper/60">{offer.description}</p>
                 </div>
                 <span className="text-[11px] text-amber-200">
-                  {offer.priceSilver} 銀
+                  {offer.priceSilver} 銀兩
                 </span>
               </div>
               <button
