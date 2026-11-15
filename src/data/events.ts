@@ -1,4 +1,21 @@
+import { NG_PLUS_ENCOUNTERS } from '../lib/ngPlusStory'
 import type { StoryEventDef } from '../types/game'
+
+/** 過熱樞紐：造訪權重略降；過冷秘境：加權與導流 */
+export const HOT_LOCATION_IDS = [
+  'loc_broken_temple',
+  'loc_xiangyang',
+  'loc_luoyang_post',
+] as const
+
+export const COLD_LOCATION_IDS = [
+  'loc_lingjiu',
+  'loc_peach_island',
+  'loc_dead_tomb',
+  'loc_huashan',
+  'loc_emei_gate',
+  'loc_icefire_isle',
+] as const
 
 /** 旬名 */
 export const XUN_LABELS = ['上旬', '中旬', '下旬'] as const
@@ -33,6 +50,7 @@ export const MAIN_STORY_EVENTS: StoryEventDef[] = [
           inspiration: 2,
           flags: { route_y1: 'chivalry' },
           affinity: { npc_guo_jing: 8, npc_hong_qigong: 6 },
+          martialIds: ['ma_act_xiangyang'],
         },
         startCombat: true,
       },
@@ -48,6 +66,7 @@ export const MAIN_STORY_EVENTS: StoryEventDef[] = [
           potential: 2,
           flags: { route_y1: 'intel' },
           affinity: { npc_bai_xiaosheng: 10 },
+          martialIds: ['ma_heart_tianji'],
         },
       },
       {
@@ -62,6 +81,7 @@ export const MAIN_STORY_EVENTS: StoryEventDef[] = [
           inspiration: 3,
           flags: { route_y1: 'scheme' },
           affinity: { npc_huang_rong: 6 },
+          martialIds: ['ma_heart_zhao'],
         },
       },
     ],
@@ -89,6 +109,7 @@ export const MAIN_STORY_EVENTS: StoryEventDef[] = [
           silver: 30,
           flags: { route_y2: 'sword' },
           affinity: { npc_linghu_chong: 10, npc_feng_qingyang: 6 },
+          martialIds: ['ma_qing_huashan'],
         },
         startCombat: true,
       },
@@ -103,6 +124,7 @@ export const MAIN_STORY_EVENTS: StoryEventDef[] = [
           potential: 3,
           flags: { route_y2: 'scholar' },
           affinity: { npc_wang_yuyan: 12 },
+          martialIds: ['ma_act_liumei'],
         },
       },
       {
@@ -116,6 +138,7 @@ export const MAIN_STORY_EVENTS: StoryEventDef[] = [
           silver: 20,
           flags: { route_y2: 'scheme', yue_secret: 1 },
           affinity: { npc_ren_yingying: 6 },
+          martialIds: ['ma_heart_yue'],
         },
       },
     ],
@@ -142,6 +165,7 @@ export const MAIN_STORY_EVENTS: StoryEventDef[] = [
           exp: 55,
           flags: { route_y3: 'battle' },
           affinity: { npc_xiaolongnu: 12, npc_yang_guo: 8 },
+          martialIds: ['ma_qing_tomb'],
         },
         startCombat: true,
       },
@@ -155,6 +179,7 @@ export const MAIN_STORY_EVENTS: StoryEventDef[] = [
           potential: 5,
           flags: { route_y3: 'seal' },
           affinity: { npc_xiaolongnu: 10 },
+          martialIds: ['ma_gumupo_jade'],
         },
       },
       {
@@ -168,6 +193,7 @@ export const MAIN_STORY_EVENTS: StoryEventDef[] = [
           inspiration: 7,
           flags: { route_y3: 'ally' },
           affinity: { npc_huang_yaoshi: 8, npc_huang_rong: 6 },
+          martialIds: ['ma_hua_gong'],
         },
       },
     ],
@@ -194,6 +220,7 @@ export const MAIN_STORY_EVENTS: StoryEventDef[] = [
           silver: 50,
           potential: 5,
           flags: { route_y4: 'battle' },
+          martialIds: ['ma_kuiying'],
         },
         startCombat: true,
       },
@@ -208,6 +235,7 @@ export const MAIN_STORY_EVENTS: StoryEventDef[] = [
           silver: 35,
           flags: { route_y4: 'contract' },
           affinity: { npc_zhao_min: 12, npc_dongfang_bubai: 4 },
+          martialIds: ['ma_heart_zhao'],
         },
       },
       {
@@ -221,6 +249,7 @@ export const MAIN_STORY_EVENTS: StoryEventDef[] = [
           potential: 4,
           flags: { route_y4: 'oath' },
           affinity: { npc_zhang_wuji: 10, npc_ren_yingying: 6 },
+          martialIds: ['ma_mingjiao_fire'],
         },
       },
     ],
@@ -249,6 +278,7 @@ export const MAIN_STORY_EVENTS: StoryEventDef[] = [
           potential: 6,
           flags: { ending_chivalry: true, ngHint: 1 },
           affinity: { npc_guo_jing: 10, npc_qiao_feng: 8 },
+          martialIds: ['ma_act_dragon'],
         },
         startCombat: true,
       },
@@ -264,6 +294,7 @@ export const MAIN_STORY_EVENTS: StoryEventDef[] = [
           potential: 5,
           flags: { ending_contract: true, ngHint: 1 },
           affinity: { npc_zhao_min: 12, npc_bai_xiaosheng: 8, npc_wei_xiaobao: 6 },
+          martialIds: ['ma_qing_wharf'],
         },
       },
       {
@@ -279,6 +310,7 @@ export const MAIN_STORY_EVENTS: StoryEventDef[] = [
           exp: 40,
           flags: { ending_retreat: true, ngHint: 1 },
           affinity: { npc_huang_yaoshi: 10, npc_huang_rong: 8, npc_xiaolongnu: 6 },
+          martialIds: ['ma_qing_wave'],
         },
       },
       {
@@ -293,6 +325,7 @@ export const MAIN_STORY_EVENTS: StoryEventDef[] = [
           silver: 40,
           flags: { ending_sword: true, ngHint: 1 },
           affinity: { npc_linghu_chong: 10, npc_feng_qingyang: 10 },
+          martialIds: ['ma_act_lonely'],
         },
         startCombat: true,
       },
@@ -399,8 +432,12 @@ export const ENCOUNTER_EVENTS: StoryEventDef[] = [
         id: 'enc_scroll_study',
         label: '就地參悟',
         hint: '潛能／靈感',
-        outcomeText: '你用現代呼吸法對照殘句，似有所悟。',
-        rewards: { potential: 3, inspiration: 3 },
+        outcomeText: '你用現代呼吸法對照殘句，似有所悟，並記下《久陽真息》起手。',
+        rewards: {
+          potential: 3,
+          inspiration: 3,
+          martialIds: ['ma_jiuyang'],
+        },
       },
       {
         id: 'enc_scroll_sell',
@@ -458,8 +495,12 @@ export const ENCOUNTER_EVENTS: StoryEventDef[] = [
         id: 'enc_emei_obey',
         label: '收起手機，恭敬通過',
         hint: '好感',
-        outcomeText: '週芷若遠望一眼，微微頷首。',
-        rewards: { affinity: { npc_zhou_zhiruo: 6, npc_mie_jue: 4 }, inspiration: 1 },
+        outcomeText: '週芷若遠望一眼，微微頷首，並囑你抄一頁「峩眉刺線」起手。',
+        rewards: {
+          affinity: { npc_zhou_zhiruo: 6, npc_mie_jue: 4 },
+          inspiration: 1,
+          martialIds: ['ma_act_emei_sword'],
+        },
       },
       {
         id: 'enc_emei_photo',
@@ -481,16 +522,26 @@ export const ENCOUNTER_EVENTS: StoryEventDef[] = [
       {
         id: 'enc_ling_sit',
         label: '坐下發呆十分鐘',
-        hint: '回復',
-        outcomeText: '你什麼都沒想，精力回來了。現代人叫這「正念」，他叫「發呆」。',
-        rewards: { staminaDelta: 15, affinity: { npc_xu_zhu: 6 } },
+        hint: '回復｜武學',
+        outcomeText:
+          '你什麼都沒想，精力回來了。虛築隨口教了半式「凌波微步」——說是免得你之後迷路。',
+        rewards: {
+          staminaDelta: 15,
+          affinity: { npc_xu_zhu: 6 },
+          martialIds: ['ma_qing_lingbo'],
+        },
       },
       {
         id: 'enc_ling_ask',
         label: '請教復國以外的人生',
-        hint: '吐槽暮容',
-        outcomeText: '虛築苦笑：「暮容公子的 KPI，我解不了。」你靈感微動。',
-        rewards: { inspiration: 3, affinity: { npc_xu_zhu: 4 } },
+        hint: '吐槽暮容｜心法',
+        outcomeText:
+          '虛築苦笑：「暮容公子的 KPI，我解不了。」他塞你一頁「虛築心法」摘要。',
+        rewards: {
+          inspiration: 3,
+          affinity: { npc_xu_zhu: 4 },
+          martialIds: ['ma_heart_xuzhu'],
+        },
       },
     ],
   },
@@ -506,15 +557,25 @@ export const ENCOUNTER_EVENTS: StoryEventDef[] = [
         id: 'enc_yan_company',
         label: '默默陪他站一炷香',
         hint: '好感',
-        outcomeText: '他開口：「多謝。」兩個字，比降朧掌還重。',
-        rewards: { affinity: { npc_qiao_feng: 10, npc_azhu: 6 }, potential: 2 },
+        outcomeText:
+          '他開口：「多謝。」兩個字，比降朧掌還重。臨別比劃半式「雁門身法」。',
+        rewards: {
+          affinity: { npc_qiao_feng: 10, npc_azhu: 6 },
+          potential: 2,
+          martialIds: ['ma_qing_yanmen'],
+        },
       },
       {
         id: 'enc_yan_joke',
         label: '講現代冷笑話緩和氣氛',
-        hint: '風險',
-        outcomeText: '冷場三秒。阿硃先笑，橋峰才哼一聲。',
-        rewards: { affinity: { npc_azhu: 8 }, inspiration: 1 },
+        hint: '風險｜心法',
+        outcomeText:
+          '冷場三秒。阿硃先笑，橋峰才哼一聲。阿硃塞你一頁「易容心法」摘要。',
+        rewards: {
+          affinity: { npc_azhu: 8 },
+          inspiration: 1,
+          martialIds: ['ma_heart_azhu'],
+        },
       },
     ],
   },
@@ -529,9 +590,15 @@ export const ENCOUNTER_EVENTS: StoryEventDef[] = [
       {
         id: 'enc_ice_enter',
         label: '硬著頭皮泡',
-        hint: '屬性',
-        outcomeText: '你差點叫救護車。出來後根骨似有開通——至少皮膚更厚了。',
-        rewards: { hpDelta: -12, potential: 4, affinity: { npc_xie_xun: 6 } },
+        hint: '屬性｜武學',
+        outcomeText:
+          '你差點叫救護車。出來後根骨似有開通，並悟得「冰火輕功」半式。',
+        rewards: {
+          hpDelta: -12,
+          potential: 4,
+          affinity: { npc_xie_xun: 6 },
+          martialIds: ['ma_qing_icefire'],
+        },
       },
       {
         id: 'enc_ice_skip',
@@ -554,15 +621,25 @@ export const ENCOUNTER_EVENTS: StoryEventDef[] = [
         id: 'enc_peach_map',
         label: '畫出簡易地圖逃出',
         hint: '靈感',
-        outcomeText: '你用專案泳道圖思維標註岔路，居然走出陣眼。皇藥師多看你一眼。',
-        rewards: { inspiration: 5, affinity: { npc_huang_yaoshi: 8 } },
+        outcomeText:
+          '你用專案泳道圖思維標註岔路，居然走出陣眼。皇藥師多看你一眼，並點撥「桃花心法」半頁。',
+        rewards: {
+          inspiration: 5,
+          affinity: { npc_huang_yaoshi: 8 },
+          martialIds: ['ma_heart_peach'],
+        },
       },
       {
         id: 'enc_peach_call',
         label: '大聲喊皇容',
-        hint: '社交',
-        outcomeText: '皇容扶額出現：「爹——客人不是獵物。」你得救了，也社死了。',
-        rewards: { affinity: { npc_huang_rong: 8 }, staminaDelta: -5 },
+        hint: '社交｜招式',
+        outcomeText:
+          '皇容扶額出現：「爹——客人不是獵物。」臨走塞你一式落影掌起手——當作封口費。',
+        rewards: {
+          affinity: { npc_huang_rong: 8 },
+          staminaDelta: -5,
+          martialIds: ['ma_act_luoying'],
+        },
       },
     ],
   },
@@ -602,15 +679,23 @@ export const ENCOUNTER_EVENTS: StoryEventDef[] = [
         id: 'enc_shuang_learn',
         label: '認真學藏針',
         hint: '潛能｜好感',
-        outcomeText: '你學會把暗器藏進袖口。現代安全規範在哭，生存率在笑。',
-        rewards: { potential: 3, affinity: { npc_shuang_er: 10 } },
+        outcomeText:
+          '你學會把暗器藏進袖口，並記下「繡花針雨」起手。現代安全規範在哭，生存率在笑。',
+        rewards: {
+          potential: 3,
+          affinity: { npc_shuang_er: 10 },
+          martialIds: ['ma_act_needle'],
+        },
       },
       {
         id: 'enc_shuang_gift',
         label: '回贈急救包',
-        hint: '好感',
-        outcomeText: '她收下草藥包，眼睛亮了。',
-        rewards: { affinity: { npc_shuang_er: 8 } },
+        hint: '好感｜招式',
+        outcomeText: '她收下草藥包，眼睛亮了，回贈「戰場清創手」半頁心得。',
+        rewards: {
+          affinity: { npc_shuang_er: 8 },
+          martialIds: ['ma_act_first_aid'],
+        },
       },
     ],
   },
@@ -625,9 +710,14 @@ export const ENCOUNTER_EVENTS: StoryEventDef[] = [
       {
         id: 'enc_murong_review',
         label: '幫他做風險評估',
-        hint: '靈感',
-        outcomeText: '你標了十二個紅燈風險。他沉默，然後說「有道理」。',
-        rewards: { inspiration: 4, affinity: { npc_murong_fu: 6 } },
+        hint: '靈感｜武學',
+        outcomeText:
+          '你標了十二個紅燈風險。他沉默，然後說「有道理」，並塞你「斗轉星移」殘抄——其實是北溟旁註。',
+        rewards: {
+          inspiration: 4,
+          affinity: { npc_murong_fu: 6 },
+          martialIds: ['ma_beiming'],
+        },
       },
       {
         id: 'enc_murong_reject',
@@ -681,10 +771,12 @@ export const ENCOUNTER_EVENTS: StoryEventDef[] = [
         id: 'enc_yue_question',
         label: '舉手問矛盾處',
         hint: '麻煩',
-        outcomeText: '全場靜音。課後峯清揚塞你一壺酒：「問得好。」',
+        outcomeText:
+          '全場靜音。課後峯清揚塞你一壺酒，並點撥「獨孤九劍意」半式：「問得好。」',
         rewards: {
           affinity: { npc_feng_qingyang: 8, npc_linghu_chong: 4 },
           inspiration: 3,
+          martialIds: ['ma_act_lonely'],
         },
       },
     ],
@@ -874,20 +966,22 @@ export const ENCOUNTER_EVENTS: StoryEventDef[] = [
 export const RUMOR_POOL: string[] = [
   '襄揚城東夜有妖光——有人說是雷火，有人說是穿越客的手電筒。',
   '華嶠論劍名額尚未定案，已有門派開始送禮給百曉笙。',
-  '活死人暮封石有裂，古暮派弟子連夜回山。',
+  '活死人暮封石有裂，古暮派弟子連夜回山——願探者可經大裡或碼頭轉進。',
   '玄木崖上針雨夜鳴，日月教與明皎教信使同日抵達。',
-  '東海碼頭船票暴漲，魏曉寶據說囤了三張「友情價」。',
+  '東海碼頭船票暴漲，魏曉寶據說囤了三張「友情價」；由此可轉桃華、冰火、甚至靈鷲方向。',
   '丐幇分舵新到一批邊城茶磚，可換消息。',
   '少凜寺外門比武改期，有人懷疑與襄揚糧道有關。',
   '蘇杭津河燈夜，望語嫣被人目擊在購武學抄本。',
-  '桃華島琴聲三日不停，漁民說花都跟著顫。',
-  '峩眉山門新立禁令：禁喧譁、禁嬉戲、禁「袖中妖光」。',
-  '冰火島影有獅吼傳回沿岸，漁船不敢近。',
-  '靈鷲峯雲開一瞬，有人見虛築與暮容復同桌飲茶——然後不歡而散。',
+  '桃華島琴聲三日不停，漁民說花都跟著顫——島上偶有奇門心法殘頁。',
+  '峩眉山門新立禁令：禁喧譁、禁嬉戲、禁「袖中妖光」。洛邑亦可借道上山。',
+  '冰火島影有獅吼傳回沿岸，漁船不敢近；敢去者或得輕功體悟。',
+  '靈鷲峯雲開一瞬，有人見虛築與暮容復同桌飲茶——峯路比傳聞近，可經碼頭或峩眉轉進。',
   '雁門關道風砂裡，有人看見橋峰與阿硃並立無語。',
-  '天機閣分閣開始賣「結局預測」——收費且不退。',
+  '天機閣分閣開始賣「結局預測」——收費且不退；另有「冷門地點清單」限時半價。',
   '嶽不群公開課座無虛席，峯清揚始終未到。',
   '週芷若夜讀門規，滅訣師太窗外立了很久。',
+  '破廟待久了會變木頭——行商勸你去碼頭吹風，順便聽船期。',
+  '有人在靈鷲峯腳下撿到「凌波」二字殘絹，天機閣出價收購。',
 ]
 
 export function pickRumors(seed: number, count = 3): string[] {
@@ -909,25 +1003,67 @@ export function getMainEventForYear(year: number): StoryEventDef | undefined {
 }
 
 /**
- * 依已知地點加權抽奇遇：無地點限制權重 3；已知對應地點 5；未走過的地點綁定 1。
- * 減少「永遠抽到同一無門檻池／永遠抽不到遠方奇遇」的體感。
+ * 依已知地點／當前位置／周目加權抽奇遇。
+ * - 無地點限制：權重 2（略降，避免熱門無門檻池過熱）
+ * - 過冷秘境：未走過 4、已知 7；人在當地再 ×1.5
+ * - 過熱樞紐綁定：已知 2、未走過 1
+ * - 其餘：已知 5、未走過 2
+ * - NG+：併入差分奇遇池
  */
 export function pickEncounter(
   seed: number,
   knownLocationIds: string[] = [],
+  opts: {
+    currentLocationId?: string
+    ngPlusCount?: number
+  } = {},
 ): StoryEventDef {
   const known = new Set(knownLocationIds)
-  const weights = ENCOUNTER_EVENTS.map((e) => {
-    if (!e.locationId) return 3
-    return known.has(e.locationId) ? 5 : 1
+  const cold = new Set<string>(COLD_LOCATION_IDS)
+  const hot = new Set<string>(HOT_LOCATION_IDS)
+  const here = opts.currentLocationId
+  const pool: StoryEventDef[] = [
+    ...ENCOUNTER_EVENTS,
+    ...((opts.ngPlusCount ?? 0) > 0 ? NG_PLUS_ENCOUNTERS : []),
+  ]
+
+  const weights = pool.map((e) => {
+    if (!e.locationId) return 2
+    const isCold = cold.has(e.locationId)
+    const isHot = hot.has(e.locationId)
+    let w = known.has(e.locationId) ? 5 : 2
+    if (isCold) w = known.has(e.locationId) ? 7 : 4
+    if (isHot) w = known.has(e.locationId) ? 2 : 1
+    if (here && e.locationId === here) w = Math.ceil(w * 1.5)
+    // 人在過熱樞紐時，額外抬冷門奇遇
+    if (here && hot.has(here) && isCold) w += 2
+    return w
   })
   const total = weights.reduce((a, b) => a + b, 0)
   let roll = Math.abs(seed) % Math.max(1, total)
-  for (let i = 0; i < ENCOUNTER_EVENTS.length; i++) {
+  for (let i = 0; i < pool.length; i++) {
     roll -= weights[i]
-    if (roll < 0) return ENCOUNTER_EVENTS[i]
+    if (roll < 0) return pool[i]
   }
-  return ENCOUNTER_EVENTS[ENCOUNTER_EVENTS.length - 1]
+  return pool[pool.length - 1]
+}
+
+/** 遊歷清單上的遠方導流提示 */
+export function farTravelHints(knownLocationIds: string[]): string[] {
+  const tips: string[] = []
+  if (!knownLocationIds.includes('loc_lingjiu')) {
+    tips.push('傳聞：靈鷲峯雲開，可經東海碼頭或峩眉轉進，虛築或肯傳半式身法。')
+  }
+  if (!knownLocationIds.includes('loc_peach_island')) {
+    tips.push('傳聞：桃華島琴聲未歇，碼頭有船可達；島上偶落奇門心法。')
+  }
+  if (!knownLocationIds.includes('loc_dead_tomb')) {
+    tips.push('傳聞：活死人暮封石有裂，自大裡或碼頭可探。')
+  }
+  if (!knownLocationIds.includes('loc_icefire_isle')) {
+    tips.push('傳聞：冰火島影獅吼再起，碼頭可轉——敢泡溫泉者或有輕功體悟。')
+  }
+  return tips.slice(0, 2)
 }
 
 /** 尚未完成的當年（或對應）主線 */

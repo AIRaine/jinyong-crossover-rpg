@@ -12,6 +12,8 @@ dist
 dist-ssr
 *.local
 sim-playtest-result.json
+sim-replayability-result.json
+sim-replayability-runs.json
 
 # Editor directories and files
 .vscode/*

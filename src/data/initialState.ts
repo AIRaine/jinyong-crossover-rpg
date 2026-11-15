@@ -142,5 +142,9 @@ export function createInitialGameState(): GameState {
     sparWins: 0,
     cosmetics: [],
     ngPlusReady: false,
+    combatLoseStreak: 0,
+    travelPassCharges: 0,
+    paidAtkBonus: 0,
+    paidDefBonus: 0,
   }
 }

@@ -276,43 +276,54 @@ export function performPlayerAction(
   return state
 }
 
+/**
+ * 路遇刀客。
+ * @param opts.loseStreak 連敗次數 → 敵人變弱（連敗保護）
+ * @param opts.year 主線年分 → 輕微抬難度，避免永遠碾壓
+ */
 export function makeBanditEncounter(
   player: Omit<CombatFighter, 'side' | 'status' | 'poisonTurns' | 'stunned'>,
   allyExtras: Omit<CombatFighter, 'side' | 'status' | 'poisonTurns' | 'stunned'>[],
+  opts: { loseStreak?: number; year?: number } = {},
 ): CombatState {
-  return createCombatEncounter({
+  const streak = Math.max(0, opts.loseStreak ?? 0)
+  const year = Math.max(1, opts.year ?? 1)
+  // 連敗：每層約 -12% 敵方面板，最多三層；年分：每年 +4%（上限 +20%）
+  const soften = Math.max(0.62, 1 - streak * 0.12)
+  const yearScale = Math.min(1.2, 1 + (year - 1) * 0.04)
+  const scale = soften * yearScale
+
+  const mk = (
+    id: string,
+    name: string,
+    base: { hp: number; atk: number; def: number; internal: number },
+  ) => ({
+    id,
+    name: streak >= 2 ? `${name}（強弩之末）` : name,
+    hp: Math.max(28, Math.floor(base.hp * scale)),
+    maxHp: Math.max(28, Math.floor(base.hp * scale)),
+    atk: Math.max(6, Math.floor(base.atk * scale)),
+    def: Math.max(2, Math.floor(base.def * scale)),
+    internal: Math.max(8, Math.floor(base.internal * scale)),
+  })
+
+  const encounter = createCombatEncounter({
     player,
     allies: allyExtras,
     enemies: [
-      {
-        id: 'bandit_1',
-        name: '黑衣刀客',
-        hp: 58,
-        maxHp: 58,
-        atk: 14,
-        def: 6,
-        internal: 18,
-      },
-      {
-        id: 'bandit_2',
-        name: '斷橋槍匪',
-        hp: 50,
-        maxHp: 50,
-        atk: 12,
-        def: 8,
-        internal: 16,
-      },
-      {
-        id: 'bandit_3',
-        name: '蒙面弓手',
-        hp: 44,
-        maxHp: 44,
-        atk: 16,
-        def: 4,
-        internal: 14,
-      },
+      mk('bandit_1', '黑衣刀客', { hp: 58, atk: 14, def: 6, internal: 18 }),
+      mk('bandit_2', '斷橋槍匪', { hp: 50, atk: 12, def: 8, internal: 16 }),
+      mk('bandit_3', '蒙面弓手', { hp: 44, atk: 16, def: 4, internal: 14 }),
     ],
   })
+  if (streak >= 2) {
+    encounter.logs = [
+      {
+        text: `連敗 ${streak} 場後，對手氣勢已衰——這是重整旗鼓的機會。`,
+      },
+    ]
+  }
+  return encounter
 }
 
 /** 榜單切磋：依對手強度縮放三名陪練 */

@@ -1,5 +1,5 @@
 /** 存檔結構版本；變更欄位時遞增並在 migrateSaveData 處理 */
-export const SAVE_VERSION = 6 as const
+export const SAVE_VERSION = 7 as const
 
 /** 底部分頁 */
 export type TabId =
@@ -279,6 +279,8 @@ export interface EventRewards {
   potential?: number
   affinity?: AffinityMap
   items?: InventoryItem[]
+  /** 直接解鎖武學至第 1 重（已學者略過） */
+  martialIds?: string[]
   flags?: GameFlags
   questsToAdd?: Quest[]
   questsToComplete?: string[]
@@ -444,6 +446,13 @@ export interface GameState {
   cosmetics: string[]
   /** 本周目是否已可結算 NG+（主線五年完成） */
   ngPlusReady: boolean
+  /** 連續戰敗次數（連敗保護／節奏用） */
+  combatLoseStreak: number
+  /** 遊歷通票：之後若干次移動減半精力 */
+  travelPassCharges: number
+  /** 課金永久攻防加值（軟上限，避免 pay-to-win 壓垮無課） */
+  paidAtkBonus: number
+  paidDefBonus: number
 }
 
 export interface ApplyRewardsResult {
