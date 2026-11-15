@@ -3,6 +3,10 @@ import type { EquipQuality, EquipmentDef } from '../types/game'
 
 export const GACHA_SINGLE_COST = 60
 export const GACHA_TEN_COST = 540
+/** 絕品硬保底抽數（年份已解鎖時） */
+export const GACHA_PITY_EPIC = 10
+/** 神兵硬保底抽數（年份已解鎖時；略縮短以強化保底體感，年份封印仍擋早期神兵） */
+export const GACHA_PITY_LEGENDARY = 25
 
 /** 年份封印：低年份鎖高品質 */
 export function maxQualityForYear(year: number): EquipQuality {
@@ -54,12 +58,12 @@ export function pullOnce(params: {
   let pityTriggered: GachaPullResult['pityTriggered'] = 'none'
   let forced: EquipQuality | null = null
 
-  if (maxQ === 'legendary' && pityLegendary >= 30) {
+  if (maxQ === 'legendary' && pityLegendary >= GACHA_PITY_LEGENDARY) {
     forced = 'legendary'
     pityTriggered = 'legendary'
   } else if (
     (maxQ === 'epic' || maxQ === 'legendary') &&
-    pityEpic >= 10
+    pityEpic >= GACHA_PITY_EPIC
   ) {
     forced = 'epic'
     pityTriggered = 'epic'
