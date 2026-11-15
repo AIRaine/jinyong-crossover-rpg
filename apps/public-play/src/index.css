@@ -1,9 +1,8 @@
-@import url('https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@500;700&family=Source+Sans+3:wght@400;600;700&display=swap');
 @import 'tailwindcss';
 
 @theme {
-  --font-display: 'Noto Serif TC', 'PingFang TC', 'Microsoft JhengHei', serif;
-  --font-sans: 'Source Sans 3', 'PingFang TC', 'Microsoft JhengHei', sans-serif;
+  --font-display: 'Songti TC', 'STSong', 'Noto Serif CJK TC', 'PingFang TC', 'Microsoft JhengHei', serif;
+  --font-sans: 'PingFang TC', 'Hiragino Sans GB', 'Noto Sans CJK TC', 'Microsoft JhengHei', 'Segoe UI', sans-serif;
 
   --color-ink-950: #0b0f14;
   --color-ink-900: #141b24;
