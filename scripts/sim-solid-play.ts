@@ -66,6 +66,7 @@ import {
 } from '../src/lib/martialUnlock.ts'
 import { pullMany, GACHA_SINGLE_COST, GACHA_TEN_COST } from '../src/lib/gachaEngine.ts'
 import {
+  detectEndingKey,
   flavorEventForNgPlus,
   NG_PLUS_ENCOUNTERS,
 } from '../src/lib/ngPlusStory.ts'
@@ -822,14 +823,28 @@ function actResolvePending(
     ENCOUNTER_EVENTS.find((e) => e.id === eventId) ??
     NG_PLUS_ENCOUNTERS.find((e) => e.id === eventId)
   if (!raw) return { state, ok: false, note: '事件缺失', blocked: 'data' }
-  const def = flavorEventForNgPlus(raw, state.ngPlusCount)
+  const def = flavorEventForNgPlus(
+    raw,
+    state.ngPlusCount,
+    detectEndingKey(state.flags),
+  )
   let choice: StoryEventChoiceDef = pick(rng, def.choices)
   if (preferNoCombat) {
     const safe = def.choices.filter((c) => !c.startCombat)
     if (safe.length) choice = pick(rng, safe)
   }
   const { state: rewarded } = applyRewards(state, choice.rewards)
-  const storyFlags = { ...rewarded.storyFlags, [eventId]: true }
+  let flagged = rewarded
+  if (eventId === 'main_y5_wharf') {
+    const endingNow = detectEndingKey(rewarded.flags)
+    if (endingNow) {
+      flagged = {
+        ...rewarded,
+        flags: { ...rewarded.flags, lastEnding: endingNow },
+      }
+    }
+  }
+  const storyFlags = { ...flagged.storyFlags, [eventId]: true }
   const mainDone = [
     'main_y1_xiangyang',
     'main_y2_huashan',
@@ -837,7 +852,7 @@ function actResolvePending(
     'main_y4_xuanmu',
     'main_y5_wharf',
   ].every((k) => storyFlags[k])
-  let time = { ...rewarded.time }
+  let time = { ...flagged.time }
   if (
     eventId.startsWith('main_y') &&
     !eventId.startsWith('main_y5') &&
@@ -852,13 +867,13 @@ function actResolvePending(
   }
   return {
     state: {
-      ...rewarded,
+      ...flagged,
       time,
       pendingEventId: null,
       storyFlags,
       lastOutcomeText: choice.outcomeText,
-      tradeRouteLevel: rewarded.tradeRouteLevel + (choice.tradeBump ?? 0),
-      ngPlusReady: rewarded.ngPlusReady || mainDone,
+      tradeRouteLevel: flagged.tradeRouteLevel + (choice.tradeBump ?? 0),
+      ngPlusReady: flagged.ngPlusReady || mainDone,
     },
     ok: true,
     note: `了結事件 ${eventId}｜${choice.label}`,

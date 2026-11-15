@@ -25,7 +25,12 @@ import {
   pickEncounter,
   pickRumors,
 } from '../data/events'
-import { flavorEventForNgPlus, NG_PLUS_ENCOUNTERS } from '../lib/ngPlusStory'
+import {
+  detectEndingKey,
+  flavorEventForNgPlus,
+  flavorPrologueForNgPlus,
+  NG_PLUS_ENCOUNTERS,
+} from '../lib/ngPlusStory'
 import {
   COMBAT_MARTIAL_POOL,
   LOCATION_MARTIAL_FINDS,
@@ -298,7 +303,11 @@ export function useGame() {
         },
       }
       const { state: rewarded, messages } = applyRewards(state, withInsp.rewards)
-      const prologue = getPrologueEvent()
+      const prologue = flavorPrologueForNgPlus(
+        getPrologueEvent(),
+        state.ngPlusCount,
+        detectEndingKey(state.flags),
+      )
       const known = new Set([
         ...rewarded.knownLocationIds,
         'loc_broken_temple',
@@ -1750,7 +1759,8 @@ export function useGame() {
         ENCOUNTER_EVENTS.find((e) => e.id === eventId) ??
         NG_PLUS_ENCOUNTERS.find((e) => e.id === eventId)
       if (!rawDef) return
-      const def = flavorEventForNgPlus(rawDef, state.ngPlusCount)
+      const lastEnding = detectEndingKey(state.flags)
+      const def = flavorEventForNgPlus(rawDef, state.ngPlusCount, lastEnding)
       const resolvedChoice =
         def.choices.find((c) => c.id === choice.id) ?? choice
 
@@ -1758,7 +1768,18 @@ export function useGame() {
         state,
         resolvedChoice.rewards,
       )
-      const storyFlags = { ...rewarded.storyFlags, [eventId]: true }
+      // 五年結局寫入 lastEnding，供下周目序章／奇遇差分
+      let flagged = rewarded
+      if (eventId === 'main_y5_wharf') {
+        const endingNow = detectEndingKey(rewarded.flags)
+        if (endingNow) {
+          flagged = {
+            ...rewarded,
+            flags: { ...rewarded.flags, lastEnding: endingNow },
+          }
+        }
+      }
+      const storyFlags = { ...flagged.storyFlags, [eventId]: true }
       const mainDone = [
         'main_y1_xiangyang',
         'main_y2_huashan',
@@ -1785,14 +1806,14 @@ export function useGame() {
       }
 
       let next: GameState = {
-        ...rewarded,
+        ...flagged,
         time,
         pendingEventId: null,
         storyFlags,
         lastOutcomeText: resolvedChoice.outcomeText,
         tradeRouteLevel:
-          rewarded.tradeRouteLevel + (resolvedChoice.tradeBump ?? 0),
-        ngPlusReady: rewarded.ngPlusReady || mainDone,
+          flagged.tradeRouteLevel + (resolvedChoice.tradeBump ?? 0),
+        ngPlusReady: flagged.ngPlusReady || mainDone,
       }
 
       if (resolvedChoice.startCombat) {
@@ -1842,8 +1863,18 @@ export function useGame() {
       null)
     : null
   const pendingEvent = pendingEventBase
-    ? flavorEventForNgPlus(pendingEventBase, state.ngPlusCount)
+    ? flavorEventForNgPlus(
+        pendingEventBase,
+        state.ngPlusCount,
+        detectEndingKey(state.flags),
+      )
     : null
+
+  const prologueEvent = flavorPrologueForNgPlus(
+    getPrologueEvent(),
+    state.ngPlusCount,
+    detectEndingKey(state.flags),
+  )
 
   return {
     state,
@@ -1854,6 +1885,7 @@ export function useGame() {
     linkedLocations,
     combat,
     pendingEvent,
+    prologueEvent,
     lastGacha,
     canNgPlus: canSettleNgPlus(state),
     setQuestOpen,
