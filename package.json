@@ -8,7 +8,8 @@
     "build": "tsc -b && vite build",
     "lint": "oxlint",
     "preview": "vite preview --host 0.0.0.0 --port 4173",
-    "sim:playtest": "npx --yes tsx scripts/sim-playtest.ts"
+    "sim:playtest": "npx --yes tsx scripts/sim-playtest.ts",
+    "sim:replayability": "npx --yes tsx scripts/sim-replayability.ts"
   },
   "dependencies": {
     "lucide-react": "^1.73.0",
