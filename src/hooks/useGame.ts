@@ -1706,8 +1706,8 @@ export function useGame() {
       xun = 0
       month += 1
       if (month > 12) {
+        // 月份循環；故事年僅由軟進年推進，避免日曆硬推跳過主線／結局閘
         month = 1
-        year += 1
       }
     }
 

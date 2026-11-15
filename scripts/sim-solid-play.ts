@@ -16,16 +16,19 @@ import {
   getLinkedLocations,
   getLocationById,
 } from '../src/data/locations.ts'
-import {
-  ENCOUNTER_EVENTS,
-  MAIN_STORY_EVENTS,
-  getStoryEventById,
-} from '../src/data/events.ts'
+import { getStoryEventById } from '../src/data/events.ts'
 import {
   applyMainBeatResolved,
+  canScheduleFinale,
   ensureStoryRoute,
   resolveAdvanceXunStory,
 } from '../src/lib/storyProgress.ts'
+import {
+  FINALE_MIN_BEATS,
+  STORY_BEAT_COOLDOWN_XUN,
+  countCompletedBeats,
+  countExperienceableArcs,
+} from '../src/data/storyArcs.ts'
 import { MOCK_TOPUP_PACKS, SILVER_SHOP } from '../src/data/shop.ts'
 import { MARTIAL_ARTS, trainPotentialCost } from '../src/data/martialArts.ts'
 import { SECTS } from '../src/data/sects.ts'
@@ -70,7 +73,6 @@ import { pullMany, GACHA_SINGLE_COST, GACHA_TEN_COST } from '../src/lib/gachaEng
 import {
   detectEndingKey,
   flavorEventForNgPlus,
-  NG_PLUS_ENCOUNTERS,
 } from '../src/lib/ngPlusStory.ts'
 import type { GameState, InventoryItem, StoryEventChoiceDef } from '../src/types/game.ts'
 
@@ -501,8 +503,8 @@ function actAdvanceXun(state: GameState, rng: () => number): ActResult {
     xun = 0
     month += 1
     if (month > 12) {
+      // 月份循環；故事年僅由軟進年推進
       month = 1
-      year += 1
     }
   }
   const tradeSilver = 5 + routed.tradeRouteLevel * 8
@@ -1239,7 +1241,7 @@ function pathF2P(seed: number): PathResult {
 
 /** E：有課抽卡經濟 */
 function pathP2W(seed: number): PathResult {
-  const { state: bootState, rng } = boot(seed)
+  const { state: bootState } = boot(seed)
   const baseline = snap(bootState)
   let state = bootState
   const steps: StepRecord[] = []
@@ -1287,7 +1289,7 @@ function pathMainRush(seed: number): PathResult {
   let state = bootState
   const steps: StepRecord[] = []
   let guard = 0
-  while (!state.ngPlusReady && guard < 220) {
+  while (!state.ngPlusReady && guard < 360) {
     guard++
     if (state.pendingEventId) {
       state = record(steps, '了結事件', state, actResolvePending(state, rng, true))
@@ -1295,26 +1297,31 @@ function pathMainRush(seed: number): PathResult {
     }
     state = record(steps, '推進一旬', state, actAdvanceXun(state, rng))
   }
+  const earlyFinale =
+    state.storyFlags.main_y5_wharf &&
+    countCompletedBeats(state) < FINALE_MIN_BEATS
   return finishPath(
     'main-rush',
     '主線速通',
-    '只推旬＋了結主線／奇遇，衝五年 NG+ 就緒',
+    '只推旬＋了結主線／奇遇，衝五年 NG+ 就緒（受結局閘約束）',
     baseline,
     state,
     steps,
     {
       stuck: !state.ngPlusReady,
       infiniteFarm: false,
-      copyMismatch: false,
+      copyMismatch: earlyFinale,
       notes: [
         state.ngPlusReady
-          ? `NG+ 就緒，步數 ${steps.length}`
-          : `未就緒，停於年 ${state.time.year}`,
+          ? `NG+ 就緒，步數 ${steps.length}｜節拍 ${countCompletedBeats(state)}`
+          : `未就緒，停於年 ${state.time.year}｜節拍 ${countCompletedBeats(state)}`,
+        earlyFinale ? '結局閘被繞過' : `結局閘 OK（≥${FINALE_MIN_BEATS}）`,
       ],
     },
     {
       steps: steps.length,
       year: state.time.year,
+      beats: countCompletedBeats(state),
       ngPlusReady: state.ngPlusReady,
       silverNet: state.currency.silver - baseline.silver,
     },
@@ -1643,6 +1650,330 @@ function pathSect(seed: number): PathResult {
   )
 }
 
+function isIllegalState(state: GameState): string | null {
+  if (state.currency.silver < 0) return '銀兩為負'
+  if (state.currency.yuanbao < 0) return '元寶為負'
+  if (state.actionPoints < 0) return 'AP 為負'
+  if (state.stats.hp < 0) return '氣血為負'
+  if (state.stats.stamina < 0) return '精力為負'
+  if (state.potential < 0) return '潛能為負'
+  if (state.completedBeatIds.length !== new Set(state.completedBeatIds).size) {
+    return '節拍 ID 重複'
+  }
+  return null
+}
+
+/** L：結局閘 — 未滿 FINALE_MIN_BEATS 不得掛上／了結東海潮信 */
+function pathFinaleGate(seed: number): PathResult {
+  const { state: bootState, rng } = boot(seed)
+  const baseline = snap(bootState)
+  let state = bootState
+  const steps: StepRecord[] = []
+  let earlyFinalePending = false
+  let earlyFinaleResolved = false
+  let maxBeatsBeforeFinale = 0
+  let guard = 0
+  while (!state.ngPlusReady && guard < 320) {
+    guard++
+    const beats = countCompletedBeats(state)
+    if (state.pendingEventId === 'main_y5_wharf') {
+      if (beats < FINALE_MIN_BEATS && !canScheduleFinale(state)) {
+        earlyFinalePending = true
+      }
+      maxBeatsBeforeFinale = Math.max(maxBeatsBeforeFinale, beats)
+      state = record(steps, '了結事件', state, actResolvePending(state, rng, true))
+      if (state.storyFlags.main_y5_wharf && beats < FINALE_MIN_BEATS) {
+        earlyFinaleResolved = true
+      }
+      continue
+    }
+    if (state.pendingEventId) {
+      state = record(steps, '了結事件', state, actResolvePending(state, rng, true))
+      continue
+    }
+    state = record(steps, '推進一旬', state, actAdvanceXun(state, rng))
+  }
+  const gateBroken = earlyFinalePending || earlyFinaleResolved
+  const stuck = !state.ngPlusReady
+  const illegal = isIllegalState(state)
+  return finishPath(
+    'finale-gate',
+    '結局閘守門',
+    `衝關至結局，確認未滿 ${FINALE_MIN_BEATS} 拍不可掛／了結東海潮信`,
+    baseline,
+    state,
+    steps,
+    {
+      stuck,
+      infiniteFarm: false,
+      copyMismatch: gateBroken || Boolean(illegal),
+      notes: [
+        gateBroken
+          ? `結局閘被繞過（pending提早=${earlyFinalePending}｜resolve提早=${earlyFinaleResolved}）`
+          : `結局閘有效：了結時節拍 ${countCompletedBeats(state)} ≥ ${FINALE_MIN_BEATS}`,
+        `步數 ${steps.length}｜冷卻常數 ${STORY_BEAT_COOLDOWN_XUN}`,
+        illegal ? `非法狀態：${illegal}` : '無非法資源狀態',
+        stuck ? '未能通關' : '已通關',
+      ],
+    },
+    {
+      steps: steps.length,
+      beats: countCompletedBeats(state),
+      ngPlusReady: state.ngPlusReady,
+      earlyFinalePending,
+      earlyFinaleResolved,
+      maxBeatsBeforeFinale,
+      experienceableArcs: countExperienceableArcs(),
+    },
+  )
+}
+
+/** M：多樣本主線衝關 — 多種子檢查卡死／節奏異常 */
+function pathMultiSampleRush(baseSeed: number): PathResult {
+  const samples: {
+    seed: number
+    steps: number
+    beats: number
+    year: number
+    ok: boolean
+    earlyFinale: boolean
+    illegal: string | null
+  }[] = []
+  const seeds = [baseSeed, baseSeed + 17, baseSeed + 91, baseSeed + 233, baseSeed + 501]
+  for (const seed of seeds) {
+    const { state: bootState, rng } = boot(seed)
+    let state = bootState
+    let earlyFinale = false
+    let guard = 0
+    let stepCount = 0
+    while (!state.ngPlusReady && guard < 360) {
+      guard++
+      stepCount++
+      if (state.pendingEventId === 'main_y5_wharf') {
+        if (countCompletedBeats(state) < FINALE_MIN_BEATS) earlyFinale = true
+        const r = actResolvePending(state, rng, true)
+        state = r.state
+        continue
+      }
+      if (state.pendingEventId) {
+        state = actResolvePending(state, rng, true).state
+        continue
+      }
+      state = actAdvanceXun(state, rng).state
+    }
+    samples.push({
+      seed,
+      steps: stepCount,
+      beats: countCompletedBeats(state),
+      year: state.time.year,
+      ok: state.ngPlusReady && !earlyFinale && !isIllegalState(state),
+      earlyFinale,
+      illegal: isIllegalState(state),
+    })
+  }
+  const stepVals = samples.map((s) => s.steps).sort((a, b) => a - b)
+  const median = stepVals[Math.floor(stepVals.length / 2)] ?? 0
+  const minS = stepVals[0] ?? 0
+  const maxS = stepVals[stepVals.length - 1] ?? 0
+  // 節奏異常：過短（仍像舊傳奇瞬跳）或樣本間差過大到像死鎖重試
+  const tooShort = minS < FINALE_MIN_BEATS + STORY_BEAT_COOLDOWN_XUN * (FINALE_MIN_BEATS - 1) - 5
+  const tooLong = maxS > 300
+  const anyFail = samples.some((s) => !s.ok)
+  const { state: bootState } = boot(baseSeed)
+  const baseline = snap(bootState)
+  return finishPath(
+    'multi-sample-rush',
+    '多樣本主線衝關',
+    `五種子只推旬＋了結，檢查通關／結局閘／節奏（期望步數 ≳${FINALE_MIN_BEATS + STORY_BEAT_COOLDOWN_XUN * (FINALE_MIN_BEATS - 1)}）`,
+    baseline,
+    bootState,
+    [],
+    {
+      stuck: anyFail,
+      infiniteFarm: false,
+      copyMismatch: tooShort,
+      notes: [
+        `樣本通關 ${samples.filter((s) => s.ok).length}/${samples.length}`,
+        `步數 min/median/max = ${minS}/${median}/${maxS}`,
+        tooShort ? '節奏過短：疑似結局閘或冷卻未生效' : '節奏下限合理',
+        tooLong ? '有樣本步數 >300（偏長，列觀察）' : '無極端過長',
+        ...samples
+          .filter((s) => !s.ok)
+          .map(
+            (s) =>
+              `失敗 seed=${s.seed} earlyFinale=${s.earlyFinale} illegal=${s.illegal ?? '無'} beats=${s.beats}`,
+          ),
+      ],
+    },
+    {
+      sampleCount: samples.length,
+      passCount: samples.filter((s) => s.ok).length,
+      stepsMin: minS,
+      stepsMedian: median,
+      stepsMax: maxS,
+      tooShort,
+      tooLong,
+    },
+  )
+}
+
+/** N：日曆推旬不硬跳故事年 — 長期不了結時年份不應被月份循環推高 */
+function pathCalendarNoSkip(seed: number): PathResult {
+  const { state: bootState, rng } = boot(seed)
+  const baseline = snap(bootState)
+  let state = bootState
+  const steps: StepRecord[] = []
+  // 只推旬、不了結，超過一年份的旬數
+  for (let i = 0; i < 40; i++) {
+    state = record(steps, '推進一旬', state, actAdvanceXun(state, rng))
+  }
+  const yearJumped = state.time.year > 1 && !state.storyFlags.main_y1_xiangyang
+  const illegal = isIllegalState(state)
+  return finishPath(
+    'calendar-no-skip',
+    '日曆不硬跳故事年',
+    '四十旬不了結主線，確認月份循環不會把故事年推到 2+',
+    baseline,
+    state,
+    steps,
+    {
+      stuck: false,
+      infiniteFarm: false,
+      copyMismatch: yearJumped || Boolean(illegal),
+      notes: [
+        yearJumped
+          ? `日曆硬推年：year=${state.time.year} 且 y1 未了`
+          : `年份仍為 ${state.time.year}（y1 未了時未被硬推）`,
+        `pending=${state.pendingEventId ?? '無'}｜節拍 ${countCompletedBeats(state)}`,
+        illegal ? `非法狀態：${illegal}` : '無非法資源狀態',
+      ],
+    },
+    {
+      year: state.time.year,
+      month: state.time.month,
+      pending: state.pendingEventId ?? '',
+      yearJumped,
+    },
+  )
+}
+
+/** O：弧死鎖壓力 — 優先了結弧節拍，確認可湊滿結局閘並通關 */
+function pathArcFillToFinale(seed: number): PathResult {
+  const { state: bootState, rng } = boot(seed)
+  const baseline = snap(bootState)
+  let state = bootState
+  const steps: StepRecord[] = []
+  const resolvedArcs: string[] = []
+  let noProgressStreak = 0
+  let guard = 0
+  let deadlock = false
+  while (!state.ngPlusReady && guard < 360) {
+    guard++
+    const beatsBefore = countCompletedBeats(state)
+    if (state.pendingEventId) {
+      const ev = state.pendingEventId
+      state = record(steps, '了結事件', state, actResolvePending(state, rng, true))
+      if (ev.startsWith('arc_') || ev.startsWith('main_')) resolvedArcs.push(ev)
+      if (countCompletedBeats(state) > beatsBefore) noProgressStreak = 0
+      else noProgressStreak++
+      continue
+    }
+    const beforePending = state.pendingEventId
+    state = record(steps, '推進一旬', state, actAdvanceXun(state, rng))
+    if (state.pendingEventId && state.pendingEventId !== beforePending) {
+      noProgressStreak = 0
+    } else {
+      noProgressStreak++
+    }
+    if (noProgressStreak > 80) {
+      deadlock = true
+      break
+    }
+  }
+  const illegal = isIllegalState(state)
+  const gateOk =
+    !state.storyFlags.main_y5_wharf ||
+    countCompletedBeats(state) >= FINALE_MIN_BEATS
+  return finishPath(
+    'arc-fill-finale',
+    '弧節拍填滿至結局',
+    '持續推旬了結弧／主線，確認無弧死鎖且結局閘後可通關',
+    baseline,
+    state,
+    steps,
+    {
+      stuck: deadlock || !state.ngPlusReady,
+      infiniteFarm: false,
+      copyMismatch: !gateOk || Boolean(illegal),
+      notes: [
+        deadlock ? '疑似弧死鎖（連續無進度）' : '無死鎖',
+        state.ngPlusReady
+          ? `通關｜節拍 ${countCompletedBeats(state)}｜步數 ${steps.length}`
+          : `未通關｜節拍 ${countCompletedBeats(state)}｜pending=${state.pendingEventId}`,
+        `已解鎖弧 ${state.unlockedArcIds.length}｜可體驗弧庫 ${countExperienceableArcs()}`,
+        illegal ? `非法狀態：${illegal}` : '無非法資源狀態',
+      ],
+    },
+    {
+      steps: steps.length,
+      beats: countCompletedBeats(state),
+      unlockedArcs: state.unlockedArcIds.length,
+      resolvedStoryEvents: resolvedArcs.length,
+      ngPlusReady: state.ngPlusReady,
+      deadlock,
+    },
+  )
+}
+
+/** P：混沌多按鈕 — 交叉操作後檢查非法狀態 */
+function pathChaosIllegal(seed: number): PathResult {
+  const { state: bootState, rng } = boot(seed)
+  const baseline = snap(bootState)
+  let state = bootState
+  const steps: StepRecord[] = []
+  let illegalHit: string | null = null
+  for (let i = 0; i < 80; i++) {
+    const roll = rng()
+    let r: ActResult
+    if (roll < 0.2) r = actAdvanceXun(state, rng)
+    else if (roll < 0.35 && state.pendingEventId) r = actResolvePending(state, rng, true)
+    else if (roll < 0.5) r = actBandit(state, rng)
+    else if (roll < 0.6) r = actSpar(state, rng)
+    else if (roll < 0.7) {
+      const links = getLinkedLocations(state.locationId)
+      r = links.length ? actTravel(state, pick(rng, links).id) : actAdvanceXun(state, rng)
+    } else if (roll < 0.8) r = actGather(state, rng() < 0.5 ? 'herb' : 'ore')
+    else if (roll < 0.9) r = actSectOnce(state)
+    else r = actBuyStaminaSoup(state)
+    state = record(steps, r.note.slice(0, 8), state, r)
+    illegalHit = isIllegalState(state)
+    if (illegalHit) break
+  }
+  return finishPath(
+    'chaos-illegal',
+    '混沌交叉操作',
+    '隨機交叉推旬／事件／路遇／切磋／移動／採集／門派，抓非法狀態',
+    baseline,
+    state,
+    steps,
+    {
+      stuck: false,
+      infiniteFarm: false,
+      copyMismatch: Boolean(illegalHit),
+      notes: [
+        illegalHit ? `出現非法狀態：${illegalHit}` : '80 步內無非法資源／節拍狀態',
+        `年 ${state.time.year}｜節拍 ${countCompletedBeats(state)}｜銀 ${state.currency.silver}`,
+      ],
+    },
+    {
+      steps: steps.length,
+      illegal: illegalHit ?? '',
+      beats: countCompletedBeats(state),
+      silver: state.currency.silver,
+    },
+  )
+}
+
 function main() {
   const paths: PathResult[] = [
     pathSpamBandit(101),
@@ -1656,15 +1987,31 @@ function main() {
     pathNightApAbuse(909),
     pathSparSpam(1010),
     pathSect(1111),
+    pathFinaleGate(1212),
+    pathMultiSampleRush(1313),
+    pathCalendarNoSkip(1414),
+    pathArcFillToFinale(1515),
+    pathChaosIllegal(1616),
   ]
 
   const p0: string[] = []
   const p1: string[] = []
   const ok: string[] = []
   for (const p of paths) {
-    if (p.flags.infiniteFarm) p0.push(`${p.id}: ${p.flags.notes.join('；')}`)
-    else if (p.flags.copyMismatch || p.flags.stuck) p1.push(`${p.id}: ${p.flags.notes.join('；')}`)
-    else ok.push(`${p.id}: 通過`)
+    // 結局閘／非法狀態／日曆硬跳 → P0
+    const gateOrIllegalP0 =
+      p.flags.copyMismatch &&
+      (p.id === 'finale-gate' ||
+        p.id === 'calendar-no-skip' ||
+        p.id === 'chaos-illegal' ||
+        p.id === 'arc-fill-finale' ||
+        p.id === 'multi-sample-rush' ||
+        p.id === 'main-rush')
+    if (p.flags.infiniteFarm || gateOrIllegalP0) {
+      p0.push(`${p.id}: ${p.flags.notes.join('；')}`)
+    } else if (p.flags.copyMismatch || p.flags.stuck) {
+      p1.push(`${p.id}: ${p.flags.notes.join('；')}`)
+    } else ok.push(`${p.id}: 通過`)
   }
 
   const report = {
