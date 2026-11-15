@@ -495,7 +495,7 @@ function applyCombatRewards(state: GameState, combat: CombatState, spar: boolean
       }
     }
     const reward = spar
-      ? { silver: 12, potential: 3 }
+      ? { silver: 12, potential: 2 }
       : banditWinRewards(state.banditFightsThisXun)
     return {
       ...state,
@@ -591,7 +591,9 @@ function stepTravel(state: GameState, rng: () => number): GameState | null {
       : state.travelPassCharges,
     stats: { ...state.stats, stamina: state.stats.stamina - cost },
     time: { ...state.time, period: nextPeriod, day: nextDay },
-    actionPoints: restoreAp ? state.maxActionPoints : state.actionPoints,
+    actionPoints: restoreAp
+      ? Math.min(state.maxActionPoints, state.actionPoints + 1)
+      : state.actionPoints,
   }
 }
 
@@ -680,6 +682,7 @@ function stepAdvanceXun(state: GameState, rng: () => number): GameState | null {
     storyFlags,
     combatLoseStreak: 0,
     banditFightsThisXun: 0,
+    sparFightsThisXun: 0,
   }
 }
 
@@ -1290,7 +1293,12 @@ function runOne(
           state,
         )
         const foe = board.find((b) => !b.isPlayer)
-        if (foe) {
+        if (foe && state.actionPoints >= 1 && state.sparFightsThisXun < 3) {
+          state = {
+            ...state,
+            actionPoints: state.actionPoints - 1,
+            sparFightsThisXun: state.sparFightsThisXun + 1,
+          }
           const enc = makeSparEncounter(
             buildPlayerCombatant(state),
             buildPartyCombatants(state),

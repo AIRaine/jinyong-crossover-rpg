@@ -58,6 +58,19 @@ import {
   getBanditStartBlock,
 } from '../lib/banditEncounterRules'
 import {
+  applySparFightStartCost,
+  getSparStartBlock,
+  SPAR_FIGHT_AP_COST,
+  SPAR_FIGHTS_PER_XUN_MAX,
+  SPAR_WIN_POTENTIAL,
+  SPAR_WIN_SILVER,
+  sparStartBlockLabel,
+} from '../lib/sparEncounterRules'
+import {
+  applyNightTravelApRestore,
+  NIGHT_TRAVEL_AP_RESTORE,
+} from '../lib/travelApRules'
+import {
   buildPartyCombatants,
   buildPlayerCombatant,
 } from '../lib/buildCombatants'
@@ -384,6 +397,12 @@ export function useGame() {
 
       const cleared =
         state.combatLoseStreak > 0 ? clearCombatLoseStreak(state) : state
+      const apAfterNight = restoreAp
+        ? applyNightTravelApRestore(
+            cleared.actionPoints,
+            cleared.maxActionPoints,
+          )
+        : cleared.actionPoints
       const next: GameState = {
         ...cleared,
         locationId: target.id,
@@ -402,7 +421,7 @@ export function useGame() {
           period: nextPeriod,
           day: nextDay,
         },
-        actionPoints: restoreAp ? cleared.maxActionPoints : cleared.actionPoints,
+        actionPoints: apAfterNight,
         lastOutcomeText: null,
         lastCombatResult: null,
       }
@@ -410,8 +429,13 @@ export function useGame() {
       playSound('page')
       const streakNote =
         state.combatLoseStreak > 0 ? '｜連敗保護已解除' : ''
+      const nightApNote = restoreAp
+        ? apAfterNight > cleared.actionPoints
+          ? `；破曉 AP +${NIGHT_TRAVEL_AP_RESTORE}（上限內）`
+          : '；破曉 AP 已滿則不增'
+        : ''
       showToast(
-        `抵達「${target.name}」，消耗精力 ${cost}${usePass ? '（通票減半）' : ''}${restoreAp ? '；AP 已回復' : ''}${martialNote}${streakNote}`,
+        `抵達「${target.name}」，消耗精力 ${cost}${usePass ? '（通票減半）' : ''}${nightApNote}${martialNote}${streakNote}`,
       )
       setStatusMsg(`你來到${target.region}的${target.name}。`)
     },
@@ -1123,22 +1147,38 @@ export function useGame() {
   const startSpar = useCallback(
     async (_entryId: string, sparPower: number, name: string) => {
       await ensureAudio()
-      if (!state.prologueDone) {
-        showToast('序章未了')
+      const block = getSparStartBlock(state)
+      if (block) {
+        playSound('fail')
+        showToast(sparStartBlockLabel(block))
+        if (block === 'no_ap') {
+          setStatusMsg(
+            `切磋需 ${SPAR_FIGHT_AP_COST} AP（目前 ${state.actionPoints}）；可推進一旬回復。`,
+          )
+        } else if (block === 'xun_cap') {
+          setStatusMsg(
+            `同旬切磋上限 ${SPAR_FIGHTS_PER_XUN_MAX} 場；推進旬制可重置次數。`,
+          )
+        }
         return
       }
+      const paid = applySparFightStartCost(state)
+      persist(paid)
       playSound('combat')
       setCombatKind('spar')
       setCombat(
         makeSparEncounter(
-          buildPlayerCombatant(state),
-          buildPartyCombatants(state),
+          buildPlayerCombatant(paid),
+          buildPartyCombatants(paid),
           sparPower,
           name,
         ),
       )
+      setStatusMsg(
+        `切磋開戰（-${SPAR_FIGHT_AP_COST} AP｜本旬 ${paid.sparFightsThisXun}/${SPAR_FIGHTS_PER_XUN_MAX}）`,
+      )
     },
-    [ensureAudio, showToast, state],
+    [ensureAudio, persist, showToast, state],
   )
 
   const settleNgPlus = useCallback(async () => {
@@ -1272,7 +1312,11 @@ export function useGame() {
           const player = next.allies.find((a) => a.isPlayer)
           const hp = player?.hp ?? state.stats.hp
           const banditReward = isSpar
-            ? { silver: 12, potential: 3, decayed: false }
+            ? {
+                silver: SPAR_WIN_SILVER,
+                potential: SPAR_WIN_POTENTIAL,
+                decayed: false,
+              }
             : banditWinRewards(state.banditFightsThisXun)
           const silverGain = banditReward.silver
           const potGain = banditReward.potential
@@ -1643,6 +1687,7 @@ export function useGame() {
       lastOutcomeText: null,
       combatLoseStreak: 0,
       banditFightsThisXun: 0,
+      sparFightsThisXun: 0,
     })
     playSound('page')
     const mainHint = unfinishedMain
@@ -1650,7 +1695,7 @@ export function useGame() {
       : ''
     const restNote = streakCleared ? '｜連敗保護已解除' : ''
     showToast(
-      `${accelNote ? `${accelNote} ` : ''}推進一旬（${apNote}）｜進入${year}年${month}月${XUN_LABELS[xun]}｜商道進帳 ${tradeSilver} 銀兩｜路遇次數重置${restNote}${mainHint}`,
+      `${accelNote ? `${accelNote} ` : ''}推進一旬（${apNote}）｜進入${year}年${month}月${XUN_LABELS[xun]}｜商道進帳 ${tradeSilver} 銀兩｜路遇／切磋次數重置${restNote}${mainHint}`,
     )
     setStatusMsg(
       unfinishedMain && pendingEventId === unfinishedMain.id
