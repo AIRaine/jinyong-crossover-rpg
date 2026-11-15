@@ -1,5 +1,9 @@
 import { ALCHEMY_RECIPES, MATERIAL_IDS } from '../../data/alchemy'
-import { getUnfinishedMainForYear, XUN_LABELS } from '../../data/events'
+import {
+  farTravelHints,
+  getUnfinishedMainForYear,
+  XUN_LABELS,
+} from '../../data/events'
 import { getPrologueEvent } from '../../data/prologue'
 import {
   getLocationById,
@@ -105,6 +109,9 @@ export function TravelTab({
   const mainLoc = unfinishedMain?.locationId
     ? getLocationById(unfinishedMain.locationId)
     : null
+  const guideTips = farTravelHints(state.knownLocationIds)
+  const fightLocked =
+    state.combatLoseStreak >= 3 || state.stats.hp <= state.stats.maxHp * 0.35
 
   return (
     <section className="space-y-4 text-left">
@@ -117,6 +124,10 @@ export function TravelTab({
           {state.time.year}年{state.time.month}月{XUN_LABELS[xun] ?? '上旬'} · AP{' '}
           {state.actionPoints}/{state.maxActionPoints} · 商道 Lv.
           {state.tradeRouteLevel}
+          {state.travelPassCharges > 0
+            ? ` · 通票 ${state.travelPassCharges} 次`
+            : ''}
+          {state.ngPlusCount > 0 ? ` · 第 ${state.ngPlusCount + 1} 周目` : ''}
         </p>
         <p className="mt-2 text-sm leading-7 text-paper/85">
           {current?.description ?? '你站在陌生的路口。'}
@@ -125,6 +136,15 @@ export function TravelTab({
           <p className="mt-3 rounded-lg bg-amber-950/45 px-3 py-2 text-xs leading-relaxed text-amber-100 ring-1 ring-amber-700/40">
             主線提醒：{unfinishedMain.title}
             {mainLoc ? `（線索地：${mainLoc.name}）` : ''}。推進旬制可觸發；了結後傳奇加速跨年。
+          </p>
+        )}
+        {state.combatLoseStreak > 0 && (
+          <p className="mt-3 rounded-lg bg-rose-950/45 px-3 py-2 text-xs leading-relaxed text-rose-100 ring-1 ring-rose-700/40">
+            連敗 {state.combatLoseStreak} 場
+            {state.combatLoseStreak >= 2
+              ? '：下一場路遇敵人會較弱；建議先服丹或換地養傷。'
+              : '：注意氣血，可先休整再戰。'}
+            {state.combatLoseStreak >= 3 ? '路遇已暫時鎖定。' : ''}
           </p>
         )}
         {statusMsg && (
@@ -143,9 +163,10 @@ export function TravelTab({
           <button
             type="button"
             onClick={onFight}
-            className="touch-btn rounded-xl bg-rose-900/60 py-3 text-sm text-rose-50"
+            disabled={fightLocked}
+            className="touch-btn rounded-xl bg-rose-900/60 py-3 text-sm text-rose-50 disabled:opacity-40"
           >
-            路遇戰鬥 3v3
+            {fightLocked ? '需先養傷' : '路遇戰鬥 3v3'}
           </button>
         </div>
       </div>
@@ -157,6 +178,13 @@ export function TravelTab({
             <li key={r.slice(0, 16)}>· {r}</li>
           ))}
         </ul>
+        {guideTips.length > 0 && (
+          <ul className="mt-3 space-y-2 border-t border-paper/10 pt-3 text-xs leading-relaxed text-teal-100/80">
+            {guideTips.map((t) => (
+              <li key={t.slice(0, 18)}>· {t}</li>
+            ))}
+          </ul>
+        )}
       </div>
 
       {pendingEvent && (
@@ -283,7 +311,13 @@ export function TravelTab({
         ) : (
           linkedLocations.map((loc) => {
             const known = state.knownLocationIds.includes(loc.id)
-            const canGo = state.stats.stamina >= loc.travelStamina
+            const cost =
+              state.travelPassCharges > 0
+                ? Math.max(1, Math.ceil(loc.travelStamina / 2))
+                : loc.travelStamina
+            const canGo = state.stats.stamina >= cost
+            const farHint =
+              loc.kind === 'secret' && !known ? ' · 建議一探' : ''
             return (
               <button
                 key={loc.id}
@@ -298,6 +332,7 @@ export function TravelTab({
                   </span>
                   <span className="mt-0.5 block text-[11px] text-paper/50">
                     {LOCATION_KIND_LABEL[loc.kind]} · {loc.region}
+                    {farHint}
                   </span>
                 </span>
                 <span
@@ -307,7 +342,8 @@ export function TravelTab({
                       : 'bg-rose-950/50 text-rose-200'
                   }`}
                 >
-                  精力 -{loc.travelStamina}
+                  精力 -{cost}
+                  {state.travelPassCharges > 0 ? '（通票）' : ''}
                 </span>
               </button>
             )

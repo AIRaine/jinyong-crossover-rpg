@@ -56,6 +56,10 @@ export function computePanelStats(state: GameState): PlayerStats {
     maxInternalForce += 8
   }
 
+  // 課金永久加值（商店軟上限，數值刻意小）
+  atkBonus += Math.min(6, state.paidAtkBonus ?? 0)
+  defBonus += Math.min(6, state.paidDefBonus ?? 0)
+
   const attack = base.attack + Math.floor(softCapBonus(atkBonus))
   const defense = base.defense + Math.floor(softCapBonus(defBonus, 40, 0.5))
 

@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import {
   MOCK_TOPUP_PACKS,
+  MONTHLY_DAILY_POTENTIAL,
   MONTHLY_DAILY_SILVER,
   MONTHLY_DAILY_YUANBAO,
   SILVER_SHOP,
@@ -148,7 +149,8 @@ export function ShopTab({
             <h3 className="font-display text-sm text-paper">江湖月卡</h3>
             <p className="mt-1 text-xs text-paper/60">
               剩餘可領 {state.monthlyCardCharges} 次。每次可領元寶{' '}
-              {MONTHLY_DAILY_YUANBAO}＋銀兩 {MONTHLY_DAILY_SILVER}（每旬一次）。
+              {MONTHLY_DAILY_YUANBAO}＋銀兩 {MONTHLY_DAILY_SILVER}＋潛能{' '}
+              {MONTHLY_DAILY_POTENTIAL}（每旬一次）。
             </p>
             <button
               type="button"

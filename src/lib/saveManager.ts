@@ -142,6 +142,22 @@ export function migrateSaveData(raw: unknown): GameState {
       typeof data.tradeRouteLevel === 'number'
         ? data.tradeRouteLevel
         : base.tradeRouteLevel,
+    combatLoseStreak:
+      typeof data.combatLoseStreak === 'number'
+        ? data.combatLoseStreak
+        : base.combatLoseStreak,
+    travelPassCharges:
+      typeof data.travelPassCharges === 'number'
+        ? data.travelPassCharges
+        : base.travelPassCharges,
+    paidAtkBonus:
+      typeof data.paidAtkBonus === 'number'
+        ? data.paidAtkBonus
+        : base.paidAtkBonus,
+    paidDefBonus:
+      typeof data.paidDefBonus === 'number'
+        ? data.paidDefBonus
+        : base.paidDefBonus,
     updatedAt: nowIso(),
   }
 
@@ -277,6 +293,18 @@ export function migrateSaveData(raw: unknown): GameState {
         originName: migrated.originJobTitle,
       }
     }
+  }
+
+  // v6 → v7：連敗保護／課金便利加值欄位
+  if (version < 7) {
+    if (typeof migrated.combatLoseStreak !== 'number') {
+      migrated.combatLoseStreak = 0
+    }
+    if (typeof migrated.travelPassCharges !== 'number') {
+      migrated.travelPassCharges = 0
+    }
+    if (typeof migrated.paidAtkBonus !== 'number') migrated.paidAtkBonus = 0
+    if (typeof migrated.paidDefBonus !== 'number') migrated.paidDefBonus = 0
   }
 
   migrated.version = SAVE_VERSION

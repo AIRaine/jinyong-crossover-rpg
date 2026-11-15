@@ -1,3 +1,4 @@
+import { getMartialById } from '../data/martialArts'
 import type {
   ApplyRewardsResult,
   EventRewards,
@@ -132,6 +133,17 @@ export function applyRewards(
     for (const item of rewards.items) {
       messages.push(`獲得「${item.name}」×${item.quantity}`)
     }
+  }
+  if (rewards.martialIds?.length) {
+    const martialProgress = { ...next.martialProgress }
+    for (const id of rewards.martialIds) {
+      const art = getMartialById(id)
+      if (!art) continue
+      if ((martialProgress[id] ?? 0) > 0) continue
+      martialProgress[id] = 1
+      messages.push(`學會武學「${art.name}」`)
+    }
+    next = { ...next, martialProgress }
   }
   if (rewards.questsToComplete?.length) {
     next.quests = next.quests.map((q) =>

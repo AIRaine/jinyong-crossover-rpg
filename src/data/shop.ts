@@ -56,20 +56,60 @@ export const SILVER_SHOP: (ShopOffer & {
   },
 ]
 
-/** 元寶貨架（非抽卡） */
+/** 元寶貨架（非抽卡）——加速／便利為主，戰鬥加值有軟上限，避免 pay-to-win */
 export const YUANBAO_SHOP: ShopOffer[] = [
   {
     id: 'shop_exp_charm',
     name: '悟性符（體驗）',
-    description: '永久悟性 +3（可重複，上限內叠）。',
+    description: '永久悟性 +3（可重複，瓶頸較易過）。',
     priceYuanbao: 28,
+    kind: 'boost',
+    available: true,
+  },
+  {
+    id: 'shop_potential_pack',
+    name: '潛能果三枚（體驗）',
+    description: '立刻獲得 18 點潛能，加速武學修練。無課亦可靠遊歷累積。',
+    priceYuanbao: 32,
+    kind: 'boost',
+    available: true,
+  },
+  {
+    id: 'shop_stamina_elixir',
+    name: '回氣仙露（體驗）',
+    description: '精力回滿，方便遠行至冷門秘境。',
+    priceYuanbao: 16,
+    kind: 'boost',
+    available: true,
+  },
+  {
+    id: 'shop_ap_incense',
+    name: '行動香篆（體驗）',
+    description: '行動點（AP）立刻 +4（不超過上限）。便利推進旬制／採集。',
+    priceYuanbao: 14,
+    kind: 'boost',
+    available: true,
+  },
+  {
+    id: 'shop_travel_pass',
+    name: '遊歷通票（體驗）',
+    description: '之後 8 次移動精力消耗減半（便利探秘，非戰力）。',
+    priceYuanbao: 36,
+    kind: 'boost',
+    available: true,
+  },
+  {
+    id: 'shop_combat_charm',
+    name: '護身小符（體驗）',
+    description: '永久攻擊 +1、防禦 +1（各最多叠至 +6）。小優勢，壓不垮無課。',
+    priceYuanbao: 40,
     kind: 'boost',
     available: true,
   },
   {
     id: 'shop_monthly_pass',
     name: '江湖月卡（體驗）',
-    description: '模擬購買：獲得 30 次「每日領取」額度。不會扣款。',
+    description: '模擬購買：獲得 30 次「每日領取」額度（含潛能）。不會扣款。',
     priceYuanbao: 68,
     kind: 'monthly',
     available: true,
@@ -114,3 +154,5 @@ export const MOCK_TOPUP_PACKS: MockTopUpPack[] = [
 
 export const MONTHLY_DAILY_YUANBAO = 25
 export const MONTHLY_DAILY_SILVER = 40
+/** 月卡每日額外潛能（養成加速，非直接戰力碾壓） */
+export const MONTHLY_DAILY_POTENTIAL = 3

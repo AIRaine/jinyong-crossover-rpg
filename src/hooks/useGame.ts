@@ -25,6 +25,14 @@ import {
   pickEncounter,
   pickRumors,
 } from '../data/events'
+import { flavorEventForNgPlus, NG_PLUS_ENCOUNTERS } from '../lib/ngPlusStory'
+import {
+  COMBAT_MARTIAL_POOL,
+  LOCATION_MARTIAL_FINDS,
+  SECT_MARTIAL_GRANTS,
+  grantMartialArts,
+  pickUnknownMartial,
+} from '../lib/martialUnlock'
 import { createItemFromCatalog, getNpcById } from '../data/npcs'
 import { getOriginById, getTechNodeById } from '../data/origins'
 import { getPrologueEvent } from '../data/prologue'
@@ -34,6 +42,7 @@ import {
 } from '../data/sects'
 import {
   MOCK_TOPUP_PACKS,
+  MONTHLY_DAILY_POTENTIAL,
   MONTHLY_DAILY_SILVER,
   MONTHLY_DAILY_YUANBAO,
   SILVER_SHOP,
@@ -315,7 +324,10 @@ export function useGame() {
         showToast('此地無法直達，請先經過鄰近節點')
         return
       }
-      const cost = target.travelStamina
+      const usePass = state.travelPassCharges > 0
+      const cost = usePass
+        ? Math.max(1, Math.ceil(target.travelStamina / 2))
+        : target.travelStamina
       if (state.stats.stamina < cost) {
         playSound('fail')
         showToast(`精力不足（需要 ${cost}，目前 ${state.stats.stamina}）`)
@@ -338,11 +350,37 @@ export function useGame() {
         state.time.period === 'night' ? state.time.day + 1 : state.time.day
       const restoreAp = state.time.period === 'night'
 
+      // 初訪過冷秘境：機率發現武學書冊
+      let martialNote = ''
+      let martialProgress = state.martialProgress
+      if (!state.knownLocationIds.includes(target.id)) {
+        const pool = LOCATION_MARTIAL_FINDS[target.id]
+        if (pool && Math.random() < 0.55) {
+          const id = pickUnknownMartial(
+            { ...state, martialProgress },
+            pool,
+          )
+          if (id) {
+            const granted = grantMartialArts(
+              { ...state, martialProgress },
+              [id],
+            )
+            martialProgress = granted.state.martialProgress
+            const art = getMartialById(id)
+            if (art) martialNote = `｜發現書冊「${art.name}」`
+          }
+        }
+      }
+
       const next: GameState = {
         ...state,
         locationId: target.id,
         locationName: target.name,
         knownLocationIds: [...known],
+        martialProgress,
+        travelPassCharges: usePass
+          ? Math.max(0, state.travelPassCharges - 1)
+          : state.travelPassCharges,
         stats: {
           ...state.stats,
           stamina: state.stats.stamina - cost,
@@ -359,7 +397,7 @@ export function useGame() {
       persist(next)
       playSound('page')
       showToast(
-        `抵達「${target.name}」，消耗精力 ${cost}${restoreAp ? '；AP 已回復' : ''}`,
+        `抵達「${target.name}」，消耗精力 ${cost}${usePass ? '（通票減半）' : ''}${restoreAp ? '；AP 已回復' : ''}${martialNote}`,
       )
       setStatusMsg(`你來到${target.region}的${target.name}。`)
     },
@@ -710,14 +748,27 @@ export function useGame() {
       const matId = kind === 'herb' ? MATERIAL_IDS.herb : MATERIAL_IDS.ore
       const mat = makeMaterial(matId, 1)
       if (!mat) return
+      let martialProgress = state.martialProgress
+      let martialNote = ''
+      const pool = LOCATION_MARTIAL_FINDS[state.locationId]
+      if (pool && Math.random() < 0.18) {
+        const mid = pickUnknownMartial(state, pool)
+        if (mid) {
+          const granted = grantMartialArts(state, [mid])
+          martialProgress = granted.state.martialProgress
+          const art = getMartialById(mid)
+          if (art) martialNote = `｜翻出書冊「${art.name}」`
+        }
+      }
       persist({
         ...state,
+        martialProgress,
         actionPoints: state.actionPoints - 1,
         inventory: mergeItem(state.inventory, mat),
         potential: state.potential + 1,
       })
       playSound('success')
-      showToast(`採集獲得「${mat.name}」×1（-1 AP，潛能+1）`)
+      showToast(`採集獲得「${mat.name}」×1（-1 AP，潛能 +1）${martialNote}`)
     },
     [ensureAudio, persist, showToast, state],
   )
@@ -889,11 +940,54 @@ export function useGame() {
         }
         showToast('江湖月卡（體驗）已生效：可領次數 +30')
       } else if (offer.kind === 'boost') {
-        next = {
-          ...next,
-          comprehension: Math.min(99, next.comprehension + 3),
+        if (offer.id === 'shop_potential_pack') {
+          next = { ...next, potential: next.potential + 18 }
+          showToast('潛能果生效：潛能 +18')
+        } else if (offer.id === 'shop_stamina_elixir') {
+          next = {
+            ...next,
+            stats: {
+              ...next.stats,
+              stamina: next.stats.maxStamina,
+            },
+          }
+          showToast('回氣仙露：精力已回滿')
+        } else if (offer.id === 'shop_ap_incense') {
+          next = {
+            ...next,
+            actionPoints: Math.min(
+              next.maxActionPoints,
+              next.actionPoints + 4,
+            ),
+          }
+          showToast('行動香篆：AP +4')
+        } else if (offer.id === 'shop_travel_pass') {
+          next = {
+            ...next,
+            travelPassCharges: next.travelPassCharges + 8,
+          }
+          showToast('遊歷通票：之後 8 次移動精力減半')
+        } else if (offer.id === 'shop_combat_charm') {
+          if (next.paidAtkBonus >= 6 && next.paidDefBonus >= 6) {
+            playSound('fail')
+            showToast('護身小符已達上限（攻防各 +6）')
+            return
+          }
+          next = {
+            ...next,
+            paidAtkBonus: Math.min(6, next.paidAtkBonus + 1),
+            paidDefBonus: Math.min(6, next.paidDefBonus + 1),
+          }
+          showToast(
+            `護身小符：攻擊 +1、防禦 +1（目前 ${next.paidAtkBonus}/${next.paidDefBonus}）`,
+          )
+        } else {
+          next = {
+            ...next,
+            comprehension: Math.min(99, next.comprehension + 3),
+          }
+          showToast('悟性符生效：悟性 +3')
         }
-        showToast('悟性符生效：悟性 +3')
       } else if (offer.kind === 'cosmetic') {
         const id = 'cosmetic_rain_temple'
         next = {
@@ -929,6 +1023,7 @@ export function useGame() {
       ...state,
       monthlyCardCharges: state.monthlyCardCharges - 1,
       monthlyClaimedXunKey: key,
+      potential: state.potential + MONTHLY_DAILY_POTENTIAL,
       currency: {
         silver: state.currency.silver + MONTHLY_DAILY_SILVER,
         yuanbao: state.currency.yuanbao + MONTHLY_DAILY_YUANBAO,
@@ -936,7 +1031,7 @@ export function useGame() {
     })
     playSound('coin')
     showToast(
-      `月卡領取：元寶 +${MONTHLY_DAILY_YUANBAO}、銀兩 +${MONTHLY_DAILY_SILVER}`,
+      `月卡領取：元寶 +${MONTHLY_DAILY_YUANBAO}、銀兩 +${MONTHLY_DAILY_SILVER}、潛能 +${MONTHLY_DAILY_POTENTIAL}`,
     )
   }, [ensureAudio, persist, showToast, state])
 
@@ -1095,11 +1190,27 @@ export function useGame() {
       showToast('序章未了')
       return
     }
+    if (state.stats.hp <= state.stats.maxHp * 0.35) {
+      playSound('fail')
+      showToast('氣血過低，先服丹或採集養傷，再上路遇')
+      setStatusMsg('戰敗疲勞提示：氣血不足三成五時不宜硬打。')
+      return
+    }
+    if (state.combatLoseStreak >= 3) {
+      playSound('fail')
+      showToast('連敗三次，先推進旬制或遊歷養傷再戰')
+      setStatusMsg('連敗保護：請先休整（旬制／丹藥／遠行），再挑戰路遇。')
+      return
+    }
     playSound('combat')
     setCombatKind('bandit')
     const encounter = makeBanditEncounter(
       buildPlayerCombatant(state),
       buildPartyCombatants(state),
+      {
+        loseStreak: state.combatLoseStreak,
+        year: state.time.year,
+      },
     )
     setCombat(encounter)
   }, [ensureAudio, showToast, state])
@@ -1117,8 +1228,21 @@ export function useGame() {
           const hp = player?.hp ?? state.stats.hp
           const silverGain = isSpar ? 12 : 20
           const potGain = isSpar ? 3 : 2
+          let martialProgress = state.martialProgress
+          let martialNote = ''
+          if (!isSpar && Math.random() < 0.28) {
+            const mid = pickUnknownMartial(state, [...COMBAT_MARTIAL_POOL])
+            if (mid) {
+              const granted = grantMartialArts(state, [mid])
+              martialProgress = granted.state.martialProgress
+              const art = getMartialById(mid)
+              if (art) martialNote = `、武學「${art.name}」`
+            }
+          }
           persist({
             ...state,
+            martialProgress,
+            combatLoseStreak: 0,
             stats: {
               ...state.stats,
               hp: Math.max(1, Math.min(state.stats.maxHp, hp)),
@@ -1134,27 +1258,50 @@ export function useGame() {
               summary: isSpar ? '切磋勝利。' : '三對三戰局勝利。',
               rewardsNote: isSpar
                 ? `銀兩 +${silverGain}、潛能 +${potGain}、切磋勝場 +1`
-                : `銀兩 +${silverGain}、潛能 +${potGain}`,
+                : `銀兩 +${silverGain}、潛能 +${potGain}${martialNote}`,
             },
           })
           showToast(
             isSpar
               ? `切磋勝利：銀兩 +${silverGain}、潛能 +${potGain}`
-              : `戰鬥勝利：銀兩 +${silverGain}、潛能 +${potGain}`,
+              : `戰鬥勝利：銀兩 +${silverGain}、潛能 +${potGain}${martialNote}`,
           )
         } else {
+          const streak = state.combatLoseStreak + 1
+          // 連敗恢復更厚：一敗 40%、二敗 55%、三敗以上 70%
+          const hpRatio = streak >= 3 ? 0.7 : streak === 2 ? 0.55 : 0.4
           persist({
             ...state,
+            combatLoseStreak: streak,
             stats: {
               ...state.stats,
-              hp: Math.max(1, Math.floor(state.stats.maxHp * 0.3)),
+              hp: Math.max(1, Math.floor(state.stats.maxHp * hpRatio)),
+              stamina: Math.min(
+                state.stats.maxStamina,
+                state.stats.stamina + (streak >= 2 ? 12 : 6),
+              ),
             },
             lastCombatResult: {
               victory: false,
-              summary: isSpar ? '切磋失利。' : '此戰失利，氣血大損。',
+              summary: isSpar
+                ? '切磋失利。'
+                : streak >= 2
+                  ? `此戰失利（連敗 ${streak}）。對手氣勢已衰，建議休整後再戰。`
+                  : '此戰失利，氣血大損。',
+              rewardsNote:
+                streak >= 3
+                  ? '連敗保護：路遇暫時鎖定，請先旬制／服丹／遠行。'
+                  : undefined,
             },
           })
-          showToast(isSpar ? '切磋敗北，氣血殘存三成' : '戰鬥敗北，氣血殘存三成')
+          showToast(
+            isSpar
+              ? '切磋敗北，氣血已回復部分'
+              : `戰鬥敗北（連敗 ${streak}），氣血回復至 ${Math.round(hpRatio * 100)}%`,
+          )
+          if (streak >= 2) {
+            setStatusMsg('連敗疲勞：先養傷或換地遊歷，下一場敵人會較弱。')
+          }
         }
         setCombatKind(null)
       }
@@ -1297,17 +1444,26 @@ export function useGame() {
         showToast(`悟性不足（需 ${sect.entry.minComprehension}）`)
         return
       }
+      const grants = SECT_MARTIAL_GRANTS[sectId]?.onJoin ?? []
+      const granted = grantMartialArts(state, grants)
+      const names = granted.learned
+        .map((id) => getMartialById(id)?.name)
+        .filter(Boolean)
       persist({
-        ...state,
+        ...granted.state,
         sectId,
         sectContribution: 0,
         currency: {
-          ...state.currency,
-          silver: state.currency.silver - sect.entry.minSilver,
+          ...granted.state.currency,
+          silver: granted.state.currency.silver - sect.entry.minSilver,
         },
       })
       playSound('success')
-      showToast(`拜入${sect.name}！`)
+      showToast(
+        names.length
+          ? `拜入${sect.name}！傳授「${names.join('、')}」`
+          : `拜入${sect.name}！`,
+      )
     },
     [ensureAudio, persist, showToast, state],
   )
@@ -1330,18 +1486,32 @@ export function useGame() {
       ? sectRankFromContribution(sect, state.sectContribution)
       : 0
     const after = sect ? sectRankFromContribution(sect, nextContrib) : 0
+    let nextState = state
+    let martialNote = ''
+    if (after > before && state.sectId) {
+      const rankGrants =
+        SECT_MARTIAL_GRANTS[state.sectId]?.onRank[after] ?? []
+      if (rankGrants.length) {
+        const granted = grantMartialArts(state, rankGrants)
+        nextState = granted.state
+        const names = granted.learned
+          .map((id) => getMartialById(id)?.name)
+          .filter(Boolean)
+        if (names.length) martialNote = `｜傳功「${names.join('、')}」`
+      }
+    }
     persist({
-      ...state,
+      ...nextState,
       sectContribution: nextContrib,
       currency: {
-        ...state.currency,
-        silver: state.currency.silver - cost,
+        ...nextState.currency,
+        silver: nextState.currency.silver - cost,
       },
     })
     playSound('coin')
     showToast(
       after > before
-        ? `貢獻 +15，晉升為門派更高階級！`
+        ? `貢獻 +15，晉升門派階級！${martialNote}`
         : `貢獻 +15（目前 ${nextContrib}）`,
     )
   }, [ensureAudio, persist, showToast, state])
@@ -1399,8 +1569,12 @@ export function useGame() {
       pendingEventId = unfinishedMain.id
     } else if (!pendingEventId && Math.random() < 0.45) {
       const enc = pickEncounter(
-        year * 30 + month * 3 + xun,
+        year * 30 + month * 3 + xun + state.ngPlusCount * 17,
         state.knownLocationIds,
+        {
+          currentLocationId: state.locationId,
+          ngPlusCount: state.ngPlusCount,
+        },
       )
       pendingEventId = enc.id
     }
@@ -1444,12 +1618,19 @@ export function useGame() {
       await ensureAudio()
       const eventId = state.pendingEventId
       if (!eventId) return
-      const def =
+      const rawDef =
         MAIN_STORY_EVENTS.find((e) => e.id === eventId) ??
-        ENCOUNTER_EVENTS.find((e) => e.id === eventId)
-      if (!def) return
+        ENCOUNTER_EVENTS.find((e) => e.id === eventId) ??
+        NG_PLUS_ENCOUNTERS.find((e) => e.id === eventId)
+      if (!rawDef) return
+      const def = flavorEventForNgPlus(rawDef, state.ngPlusCount)
+      const resolvedChoice =
+        def.choices.find((c) => c.id === choice.id) ?? choice
 
-      const { state: rewarded, messages } = applyRewards(state, choice.rewards)
+      const { state: rewarded, messages } = applyRewards(
+        state,
+        resolvedChoice.rewards,
+      )
       const storyFlags = { ...rewarded.storyFlags, [eventId]: true }
       const mainDone = [
         'main_y1_xiangyang',
@@ -1481,13 +1662,13 @@ export function useGame() {
         time,
         pendingEventId: null,
         storyFlags,
-        lastOutcomeText: choice.outcomeText,
+        lastOutcomeText: resolvedChoice.outcomeText,
         tradeRouteLevel:
-          rewarded.tradeRouteLevel + (choice.tradeBump ?? 0),
+          rewarded.tradeRouteLevel + (resolvedChoice.tradeBump ?? 0),
         ngPlusReady: rewarded.ngPlusReady || mainDone,
       }
 
-      if (choice.startCombat) {
+      if (resolvedChoice.startCombat) {
         persist(next)
         showToast(
           `${messages.join(' · ') || '事件了結，戰局開打'}${accelMsg}`,
@@ -1496,6 +1677,10 @@ export function useGame() {
         const encounter = makeBanditEncounter(
           buildPlayerCombatant(next),
           buildPartyCombatants(next),
+          {
+            loseStreak: next.combatLoseStreak,
+            year: next.time.year,
+          },
         )
         setCombat(encounter)
         playSound('combat')
@@ -1523,12 +1708,15 @@ export function useGame() {
 
   const linkedLocations = getLinkedLocations(state.locationId)
 
-  const pendingEvent =
-    state.pendingEventId
-      ? (MAIN_STORY_EVENTS.find((e) => e.id === state.pendingEventId) ??
-        ENCOUNTER_EVENTS.find((e) => e.id === state.pendingEventId) ??
-        null)
-      : null
+  const pendingEventBase = state.pendingEventId
+    ? (MAIN_STORY_EVENTS.find((e) => e.id === state.pendingEventId) ??
+      ENCOUNTER_EVENTS.find((e) => e.id === state.pendingEventId) ??
+      NG_PLUS_ENCOUNTERS.find((e) => e.id === state.pendingEventId) ??
+      null)
+    : null
+  const pendingEvent = pendingEventBase
+    ? flavorEventForNgPlus(pendingEventBase, state.ngPlusCount)
+    : null
 
   return {
     state,
