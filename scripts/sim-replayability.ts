@@ -618,7 +618,7 @@ function stepCraft(state: GameState, rng: () => number): GameState | null {
 }
 
 function stepAdvanceXun(state: GameState, rng: () => number): GameState | null {
-  if (!state.prologueDone || state.actionPoints < 2) return null
+  if (!state.prologueDone) return null
   let xun = state.time.xun + 1
   let month = state.time.month
   let year = state.time.year
@@ -661,7 +661,7 @@ function stepAdvanceXun(state: GameState, rng: () => number): GameState | null {
   }
   return {
     ...state,
-    actionPoints: Math.min(state.maxActionPoints, state.actionPoints - 2 + 3),
+    actionPoints: Math.min(state.maxActionPoints, state.actionPoints + 1),
     time: { ...state.time, xun, month, year, day, period: 'noon' },
     currency: {
       ...state.currency,
@@ -1357,12 +1357,8 @@ function runOne(
         }
       }
 
-      // 資源崩盤：無課銀兩長期極低且無法推進
-      if (
-        state.currency.silver < 5 &&
-        state.actionPoints < 2 &&
-        state.stats.stamina < 10
-      ) {
+      // 資源崩盤：銀兩與精力長期極低（旬制已不需 AP 門檻）
+      if (state.currency.silver < 5 && state.stats.stamina < 10) {
         resourceCrashHits++
       }
 

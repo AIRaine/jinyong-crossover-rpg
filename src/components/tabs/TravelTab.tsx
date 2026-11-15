@@ -160,7 +160,9 @@ export function TravelTab({
           >
             <span className="block">推進一旬</span>
             <span className="mt-0.5 block text-[10px] font-normal text-paper/85">
-              耗 2 AP，回 3 AP
+              {state.actionPoints >= state.maxActionPoints
+                ? '已滿則不增'
+                : 'AP +1，上限內'}
             </span>
           </button>
           <button

@@ -1530,12 +1530,6 @@ export function useGame() {
       showToast('序章未了')
       return
     }
-    const cost = 2
-    if (state.actionPoints < cost) {
-      playSound('fail')
-      showToast(`推進一旬需至少 ${cost} AP（耗 2 AP，回 3 AP）`)
-      return
-    }
 
     let xun = state.time.xun + 1
     let month = state.time.month
@@ -1587,12 +1581,14 @@ export function useGame() {
       pendingEventId = enc.id
     }
 
+    const apBefore = state.actionPoints
+    const apAfter = Math.min(state.maxActionPoints, apBefore + 1)
+    const apNote =
+      apAfter > apBefore ? 'AP +1（上限內）' : 'AP 已滿則不增'
+
     persist({
       ...state,
-      actionPoints: Math.min(
-        state.maxActionPoints,
-        state.actionPoints - cost + 3,
-      ),
+      actionPoints: apAfter,
       time: { ...state.time, xun, month, year, day, period: 'noon' },
       currency: {
         ...state.currency,
@@ -1608,7 +1604,7 @@ export function useGame() {
       ? `｜主線待決：${unfinishedMain.title}`
       : ''
     showToast(
-      `${accelNote ? `${accelNote} ` : ''}進入${year}年${month}月${XUN_LABELS[xun]}｜商道進帳 ${tradeSilver} 銀兩${mainHint}`,
+      `${accelNote ? `${accelNote} ` : ''}推進一旬（${apNote}）｜進入${year}年${month}月${XUN_LABELS[xun]}｜商道進帳 ${tradeSilver} 銀兩${mainHint}`,
     )
     setStatusMsg(
       unfinishedMain && pendingEventId === unfinishedMain.id
