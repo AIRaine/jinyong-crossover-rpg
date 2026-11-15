@@ -1,4 +1,5 @@
 import { ARC_BEAT_EVENTS } from './arcBeats'
+import { SHORTPACK_ENCOUNTERS } from './arcBeatsPhaseC'
 import { NG_PLUS_ENCOUNTERS } from '../lib/ngPlusStory'
 import type { StoryEventDef } from '../types/game'
 
@@ -17,6 +18,7 @@ export const COLD_LOCATION_IDS = [
   'loc_emei_gate',
   'loc_icefire_isle',
   'loc_xiake_isle',
+  'loc_snow_ridge',
 ] as const
 
 /** 旬名 */
@@ -1134,6 +1136,7 @@ export function pickEncounter(
   const here = opts.currentLocationId
   const pool: StoryEventDef[] = [
     ...ENCOUNTER_EVENTS,
+    ...SHORTPACK_ENCOUNTERS,
     ...((opts.ngPlusCount ?? 0) > 0 ? NG_PLUS_ENCOUNTERS : []),
   ]
 
@@ -1183,6 +1186,9 @@ export function farTravelHints(knownLocationIds: string[]): string[] {
   if (!knownLocationIds.includes('loc_xiake_isle')) {
     tips.push('傳聞：俠客氣島石壁夜半露字，自東海碼頭乘潮可探；潮履或有感應。')
   }
+  if (!knownLocationIds.includes('loc_snow_ridge')) {
+    tips.push('傳聞：雪蒼嶺刀痕未歇，自雁門關道或破廟可上；狐斐或肯教止殺一式。')
+  }
   return tips.slice(0, 2)
 }
 
@@ -1203,6 +1209,7 @@ export function getStoryEventById(id: string): StoryEventDef | undefined {
     MAIN_STORY_EVENTS.find((e) => e.id === id) ??
     ARC_BEAT_EVENTS.find((e) => e.id === id) ??
     ENCOUNTER_EVENTS.find((e) => e.id === id) ??
+    SHORTPACK_ENCOUNTERS.find((e) => e.id === id) ??
     NG_PLUS_ENCOUNTERS.find((e) => e.id === id)
   )
 }

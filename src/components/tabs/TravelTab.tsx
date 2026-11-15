@@ -2,6 +2,7 @@ import { ALCHEMY_RECIPES, MATERIAL_IDS } from '../../data/alchemy'
 import { farTravelHints, XUN_LABELS } from '../../data/events'
 import {
   listActiveArcSummaries,
+  seasonalModifier,
   STORY_BEAT_COOLDOWN_XUN,
 } from '../../data/storyArcs'
 import { ensureStoryRoute } from '../../lib/storyProgress'
@@ -163,13 +164,15 @@ export function TravelTab({
           {current?.description ?? '你站在陌生的路口。'}
         </p>
         <div className="mt-3 space-y-2 rounded-lg bg-ink-950/50 px-3 py-2 ring-1 ring-paper/10">
-          <p className="text-[11px] tracking-wide text-cinnabar-soft">日登／本週</p>
+          <p className="text-[11px] tracking-wide text-cinnabar-soft">
+            日登／本週・{seasonalModifier().label}
+          </p>
           <button
             type="button"
             onClick={onClaimDaily}
             className="touch-btn w-full rounded-lg border border-teal-800/50 bg-teal-950/40 px-3 py-2 text-left text-xs text-teal-50"
           >
-            領取今日登入（銀兩／潛能／AP）
+            領取今日登入（季節加成・連登有獎）
           </button>
           <ul className="space-y-1.5">
             {weeklyGoals.map((g) => (

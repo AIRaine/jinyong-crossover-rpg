@@ -333,6 +333,11 @@ export type StoryLibraryTag =
   | 'tianlong'
   | 'luding'
   | 'xiake'
+  | 'liancheng'
+  | 'feihu'
+  | 'shujian'
+  | 'bixue'
+  | 'shortpack'
   | 'finale'
   | 'other'
 
@@ -357,6 +362,8 @@ export interface StoryArcDef {
   libraryTag: StoryLibraryTag
   /** 開局抽取權重；0＝不進開局池 */
   starterWeight: number
+  /** NG+ 額外抽取權重（可選） */
+  ngPlusWeightBonus?: number
   unlockWhen?: StoryArcUnlockWhen
   beats: StoryBeatDef[]
 }
@@ -367,9 +374,18 @@ export interface DailyLoginState {
   streak: number
 }
 
+export type WeeklyGoalKind =
+  | 'advance_xun'
+  | 'visit_cold'
+  | 'complete_beat'
+  | 'gather'
+  | 'train'
+  | 'affinity'
+  | 'visit_sect'
+
 export interface WeeklyGoalState {
   id: string
-  kind: 'advance_xun' | 'visit_cold' | 'complete_beat'
+  kind: WeeklyGoalKind
   title: string
   target: number
   progress: number

@@ -24,10 +24,9 @@ import {
 import {
   bumpWeeklyGoal,
   calendarDateKey,
-  DAILY_LOGIN_AP,
-  DAILY_LOGIN_POTENTIAL,
-  DAILY_LOGIN_SILVER,
+  dailyLoginReward,
   ensureWeeklyGoals,
+  weeklyGoalReward,
 } from '../data/storyArcs'
 import {
   allMainBeatsDone,
@@ -448,6 +447,9 @@ export function useGame() {
       if (cold.has(target.id)) {
         next = bumpWeeklyGoal(ensureWeeklyGoals(next), 'visit_cold', 1)
       }
+      if (target.kind === 'sect') {
+        next = bumpWeeklyGoal(ensureWeeklyGoals(next), 'visit_sect', 1)
+      }
       persist(next)
       playSound('page')
       const streakNote =
@@ -718,11 +720,17 @@ export function useGame() {
           )
           return
         }
-        persist({
-          ...state,
-          potential: state.potential - learnCost,
-          martialProgress: { ...state.martialProgress, [artId]: 1 },
-        })
+        persist(
+          bumpWeeklyGoal(
+            {
+              ...state,
+              potential: state.potential - learnCost,
+              martialProgress: { ...state.martialProgress, [artId]: 1 },
+            },
+            'train',
+            1,
+          ),
+        )
         playSound('success')
         showToast(`學會「${art.name}」第 1 重`)
         return
@@ -768,11 +776,17 @@ export function useGame() {
         }
       }
 
-      persist({
-        ...state,
-        potential: state.potential - cost,
-        martialProgress: { ...state.martialProgress, [artId]: target },
-      })
+      persist(
+        bumpWeeklyGoal(
+          {
+            ...state,
+            potential: state.potential - cost,
+            martialProgress: { ...state.martialProgress, [artId]: target },
+          },
+          'train',
+          1,
+        ),
+      )
       playSound('success')
       showToast(
         isBottleneck
@@ -827,13 +841,19 @@ export function useGame() {
           if (art) martialNote = `｜翻出書冊「${art.name}」`
         }
       }
-      persist({
-        ...state,
-        martialProgress,
-        actionPoints: state.actionPoints - 1,
-        inventory: mergeItem(state.inventory, mat),
-        potential: state.potential + 1,
-      })
+      persist(
+        bumpWeeklyGoal(
+          {
+            ...state,
+            martialProgress,
+            actionPoints: state.actionPoints - 1,
+            inventory: mergeItem(state.inventory, mat),
+            potential: state.potential + 1,
+          },
+          'gather',
+          1,
+        ),
+      )
       playSound('success')
       showToast(`採集獲得「${mat.name}」×1（-1 AP，潛能 +1）${martialNote}`)
     },
@@ -1480,11 +1500,17 @@ export function useGame() {
         100,
         (state.affinity[npcId] ?? 0) + delta,
       )
-      persist({
-        ...state,
-        inventory: inv,
-        affinity: { ...state.affinity, [npcId]: nextAff },
-      })
+      persist(
+        bumpWeeklyGoal(
+          {
+            ...state,
+            inventory: inv,
+            affinity: { ...state.affinity, [npcId]: nextAff },
+          },
+          'affinity',
+          1,
+        ),
+      )
       playSound('success')
       showToast(
         `贈予${npc.name}：好感 ${fav ? '大增' : '上升'}至 ${nextAff}`,
@@ -1837,24 +1863,24 @@ export function useGame() {
     const yKey = calendarDateKey(yesterday)
     const streak =
       state.daily.lastClaimDate === yKey ? state.daily.streak + 1 : 1
-    const bonusSilver = Math.min(15, Math.max(0, streak - 1) * 3)
+    const reward = dailyLoginReward(streak)
     const next: GameState = {
       ...ensureStoryRoute(state),
       daily: { lastClaimDate: today, streak },
       currency: {
         ...state.currency,
-        silver: state.currency.silver + DAILY_LOGIN_SILVER + bonusSilver,
+        silver: state.currency.silver + reward.silver,
       },
-      potential: state.potential + DAILY_LOGIN_POTENTIAL,
+      potential: state.potential + reward.potential,
       actionPoints: Math.min(
         state.maxActionPoints,
-        state.actionPoints + DAILY_LOGIN_AP,
+        state.actionPoints + reward.ap,
       ),
     }
     persist(next)
     playSound('success')
     showToast(
-      `日登領取：銀兩 +${DAILY_LOGIN_SILVER + bonusSilver}、潛能 +${DAILY_LOGIN_POTENTIAL}、AP +${DAILY_LOGIN_AP}（連登 ${streak} 日）`,
+      `日登【${reward.seasonLabel}】：銀兩 +${reward.silver}、潛能 +${reward.potential}、AP +${reward.ap}（連登 ${streak} 日）`,
     )
   }, [ensureAudio, persist, showToast, state])
 
@@ -1878,6 +1904,7 @@ export function useGame() {
         showToast('尚未達成')
         return
       }
+      const reward = weeklyGoalReward(goal.kind)
       const next: GameState = {
         ...synced,
         weekly: {
@@ -1888,14 +1915,16 @@ export function useGame() {
         },
         currency: {
           ...synced.currency,
-          silver: synced.currency.silver + 40,
+          silver: synced.currency.silver + reward.silver,
         },
-        potential: synced.potential + 4,
-        inspiration: synced.inspiration + 2,
+        potential: synced.potential + reward.potential,
+        inspiration: synced.inspiration + reward.inspiration,
       }
       persist(next)
       playSound('success')
-      showToast('週目標領取：銀兩 +40、潛能 +4、靈感 +2')
+      showToast(
+        `週目標領取：銀兩 +${reward.silver}、潛能 +${reward.potential}、靈感 +${reward.inspiration}`,
+      )
     },
     [ensureAudio, persist, showToast, state],
   )

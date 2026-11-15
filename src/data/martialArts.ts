@@ -340,6 +340,28 @@ export const MARTIAL_ARTS: MartialArtDef[] = [
     attackPerLevel: 2,
     defensePerLevel: 1,
   },
+  {
+    id: 'ma_qing_snow',
+    name: '雪蒼折梅步',
+    kind: 'qinggong',
+    description: '踏雪無聲，轉折如梅枝——適合嶺上與關道。',
+    defensePerLevel: 1,
+  },
+  {
+    id: 'ma_heart_liancheng',
+    name: '連城心記',
+    kind: 'heart',
+    description: '記圖、記坑、記人。貪念一起便自亂節奏。',
+    defensePerLevel: 2,
+  },
+  {
+    id: 'ma_act_blood_sword',
+    name: '碧血殘鋒',
+    kind: 'active',
+    description: '收勢重於出招；刃意內斂，先問後斬。',
+    attackPerLevel: 2,
+    defensePerLevel: 1,
+  },
 ]
 
 export function getMartialById(id: string): MartialArtDef | undefined {

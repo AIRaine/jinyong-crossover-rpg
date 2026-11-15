@@ -1,8 +1,9 @@
 /**
- * 階段 B：各故事弧加長／新建節拍（≥3 拍／弧）
+ * 階段 B／C：各故事弧加長／新建節拍（≥3～5 拍／弧）
  * 僅使用諧音代稱；library 對照勿進 UI。
  */
 import type { StoryEventDef } from '../types/game'
+import { PHASE_C_ARC_BEATS } from './arcBeatsPhaseC'
 
 /** 弧節拍事件池（不含舊五年主線；舊線仍在 MAIN_STORY_EVENTS） */
 export const ARC_BEAT_EVENTS: StoryEventDef[] = [
@@ -923,6 +924,8 @@ export const ARC_BEAT_EVENTS: StoryEventDef[] = [
       },
     ],
   },
+
+  ...PHASE_C_ARC_BEATS,
 ]
 
 export function getArcBeatById(id: string): StoryEventDef | undefined {

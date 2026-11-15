@@ -1097,7 +1097,7 @@ function scriptedPath(tier: PayTier): Record<string, number | boolean | string> 
 
   // 主線：必須推旬＋解事件，無法用元寶跳過選項
   let guard = 0
-  while (!state.storyFlags['main_y5_wharf'] && guard < 200) {
+  while (!state.storyFlags['main_y5_wharf'] && guard < 400) {
     guard++
     if (state.pendingEventId) {
       act('event', () => {
