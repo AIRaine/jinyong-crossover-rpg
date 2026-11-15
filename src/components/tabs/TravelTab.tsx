@@ -334,6 +334,9 @@ export function TravelTab({
 
       <div className="space-y-2">
         <h3 className="font-display text-sm text-paper/80">可前往</h3>
+        <p className="text-[11px] text-paper/45">
+          夜間出發至破曉：AP +1（上限內），不會回滿。主要 AP 靠推進一旬。
+        </p>
         {linkedLocations.length === 0 ? (
           <p className="rounded-xl border border-dashed border-paper/20 px-4 py-6 text-center text-sm text-paper/45">
             此處暫無通路。

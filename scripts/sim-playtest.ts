@@ -331,7 +331,7 @@ function applyCombatRewards(state: GameState, combat: CombatState, spar: boolean
         ...state.currency,
         silver: state.currency.silver + (spar ? 12 : 20),
       },
-      potential: state.potential + (spar ? 3 : 2),
+      potential: state.potential + (spar ? 2 : 2),
       sparWins: state.sparWins + (spar ? 1 : 0),
     }
   }
@@ -380,7 +380,9 @@ function stepTravel(state: GameState, rng: () => number): GameState | null {
     knownLocationIds: [...known],
     stats: { ...state.stats, stamina: state.stats.stamina - cost },
     time: { ...state.time, period: nextPeriod, day: nextDay },
-    actionPoints: restoreAp ? state.maxActionPoints : state.actionPoints,
+    actionPoints: restoreAp
+      ? Math.min(state.maxActionPoints, state.actionPoints + 1)
+      : state.actionPoints,
   }
 }
 

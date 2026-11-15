@@ -150,6 +150,10 @@ export function migrateSaveData(raw: unknown): GameState {
       typeof data.banditFightsThisXun === 'number'
         ? data.banditFightsThisXun
         : base.banditFightsThisXun,
+    sparFightsThisXun:
+      typeof data.sparFightsThisXun === 'number'
+        ? data.sparFightsThisXun
+        : base.sparFightsThisXun,
     travelPassCharges:
       typeof data.travelPassCharges === 'number'
         ? data.travelPassCharges
@@ -315,6 +319,13 @@ export function migrateSaveData(raw: unknown): GameState {
   if (version < 8) {
     if (typeof migrated.banditFightsThisXun !== 'number') {
       migrated.banditFightsThisXun = 0
+    }
+  }
+
+  // v8 → v9：切磋同旬次數（防無成本刷）
+  if (version < 9) {
+    if (typeof migrated.sparFightsThisXun !== 'number') {
+      migrated.sparFightsThisXun = 0
     }
   }
 

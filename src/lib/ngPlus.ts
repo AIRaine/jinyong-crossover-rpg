@@ -45,6 +45,7 @@ export function applyNewGamePlus(prev: GameState): GameState {
     potential: 8,
     combatLoseStreak: 0,
     banditFightsThisXun: 0,
+    sparFightsThisXun: 0,
     travelPassCharges: prev.travelPassCharges,
     paidAtkBonus: prev.paidAtkBonus,
     paidDefBonus: prev.paidDefBonus,
