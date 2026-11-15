@@ -11,7 +11,8 @@
     "sim:playtest": "npx --yes tsx scripts/sim-playtest.ts",
     "sim:replayability": "npx --yes tsx scripts/sim-replayability.ts",
     "sim:encounter-farm": "npx --yes tsx scripts/sim-encounter-farm.ts",
-    "sim:solid-play": "npx --yes tsx scripts/sim-solid-play.ts"
+    "sim:solid-play": "npx --yes tsx scripts/sim-solid-play.ts",
+    "sim:pay-tier": "npx --yes tsx scripts/sim-pay-tier.ts"
   },
   "dependencies": {
     "lucide-react": "^1.73.0",

@@ -42,6 +42,7 @@ import {
 } from '../data/sects'
 import {
   MOCK_TOPUP_PACKS,
+  MONTHLY_DAILY_AP,
   MONTHLY_DAILY_POTENTIAL,
   MONTHLY_DAILY_SILVER,
   MONTHLY_DAILY_YUANBAO,
@@ -994,7 +995,28 @@ export function useGame() {
         }
         showToast('江湖月卡（體驗）已生效：可領次數 +30')
       } else if (offer.kind === 'boost') {
-        if (offer.id === 'shop_potential_pack') {
+        if (offer.id === 'shop_convenience_kit') {
+          const halfStamina = Math.max(
+            1,
+            Math.floor(next.stats.maxStamina / 2),
+          )
+          next = {
+            ...next,
+            actionPoints: Math.min(
+              next.maxActionPoints,
+              next.actionPoints + 3,
+            ),
+            travelPassCharges: next.travelPassCharges + 2,
+            stats: {
+              ...next.stats,
+              stamina: Math.min(
+                next.stats.maxStamina,
+                next.stats.stamina + halfStamina,
+              ),
+            },
+          }
+          showToast('遊歷便利錦囊：AP +3、精力回一半、通票 +2')
+        } else if (offer.id === 'shop_potential_pack') {
           next = { ...next, potential: next.potential + 18 }
           showToast('潛能果生效：潛能 +18')
         } else if (offer.id === 'shop_stamina_elixir') {
@@ -1073,11 +1095,19 @@ export function useGame() {
       showToast('本旬已領過月卡')
       return
     }
+    const apGain = Math.min(
+      MONTHLY_DAILY_AP,
+      Math.max(0, state.maxActionPoints - state.actionPoints),
+    )
     persist({
       ...state,
       monthlyCardCharges: state.monthlyCardCharges - 1,
       monthlyClaimedXunKey: key,
       potential: state.potential + MONTHLY_DAILY_POTENTIAL,
+      actionPoints: Math.min(
+        state.maxActionPoints,
+        state.actionPoints + MONTHLY_DAILY_AP,
+      ),
       currency: {
         silver: state.currency.silver + MONTHLY_DAILY_SILVER,
         yuanbao: state.currency.yuanbao + MONTHLY_DAILY_YUANBAO,
@@ -1085,7 +1115,9 @@ export function useGame() {
     })
     playSound('coin')
     showToast(
-      `月卡領取：元寶 +${MONTHLY_DAILY_YUANBAO}、銀兩 +${MONTHLY_DAILY_SILVER}、潛能 +${MONTHLY_DAILY_POTENTIAL}`,
+      `月卡領取：元寶 +${MONTHLY_DAILY_YUANBAO}、銀兩 +${MONTHLY_DAILY_SILVER}、潛能 +${MONTHLY_DAILY_POTENTIAL}${
+        apGain > 0 ? `、AP +${apGain}` : '（AP 已滿）'
+      }`,
     )
   }, [ensureAudio, persist, showToast, state])
 

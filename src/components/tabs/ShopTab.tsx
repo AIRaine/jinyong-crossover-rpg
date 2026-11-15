@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import {
   MOCK_TOPUP_PACKS,
+  MONTHLY_DAILY_AP,
   MONTHLY_DAILY_POTENTIAL,
   MONTHLY_DAILY_SILVER,
   MONTHLY_DAILY_YUANBAO,
@@ -8,6 +9,8 @@ import {
   YUANBAO_SHOP,
 } from '../../data/shop'
 import {
+  GACHA_PITY_EPIC,
+  GACHA_PITY_LEGENDARY,
   GACHA_SINGLE_COST,
   GACHA_TEN_COST,
   yearSealHint,
@@ -78,8 +81,8 @@ export function ShopTab({
           <div className="rounded-xl border border-amber-700/30 bg-amber-950/20 p-3 text-xs text-amber-100/90">
             <p>{yearSealHint(year)}</p>
             <p className="mt-1 text-paper/55">
-              保底：絕品 {state.gachaPityEpic}/10 · 神兵{' '}
-              {state.gachaPityLegendary}/30 · 累計抽{' '}
+              保底：絕品 {state.gachaPityEpic}/{GACHA_PITY_EPIC} · 神兵{' '}
+              {state.gachaPityLegendary}/{GACHA_PITY_LEGENDARY} · 累計抽{' '}
               {state.gachaTotalPulls}
             </p>
           </div>
@@ -148,9 +151,9 @@ export function ShopTab({
           <div className="rounded-xl border border-paper/10 bg-ink-900/65 p-3">
             <h3 className="font-display text-sm text-paper">江湖月卡</h3>
             <p className="mt-1 text-xs text-paper/60">
-              剩餘可領 {state.monthlyCardCharges} 次。每次可領元寶{' '}
+              剩餘可領 {state.monthlyCardCharges} 次。每旬可領元寶{' '}
               {MONTHLY_DAILY_YUANBAO}＋銀兩 {MONTHLY_DAILY_SILVER}＋潛能{' '}
-              {MONTHLY_DAILY_POTENTIAL}（每旬一次）。
+              {MONTHLY_DAILY_POTENTIAL}＋AP {MONTHLY_DAILY_AP}（上限內）。
             </p>
             <button
               type="button"
