@@ -18,8 +18,7 @@ import {
 } from '../data/martialArts'
 import {
   COLD_LOCATION_IDS,
-  ENCOUNTER_EVENTS,
-  MAIN_STORY_EVENTS,
+  getStoryEventById,
   XUN_LABELS,
 } from '../data/events'
 import {
@@ -40,7 +39,6 @@ import {
   detectEndingKey,
   flavorEventForNgPlus,
   flavorPrologueForNgPlus,
-  NG_PLUS_ENCOUNTERS,
 } from '../lib/ngPlusStory'
 import {
   COMBAT_MARTIAL_POOL,
@@ -1726,7 +1724,7 @@ export function useGame() {
     persist(next)
     playSound('page')
     const pendingTitle = story.pendingEventId
-      ? MAIN_STORY_EVENTS.find((e) => e.id === story.pendingEventId)?.title
+      ? getStoryEventById(story.pendingEventId)?.title
       : null
     const restNote = streakCleared ? '｜連敗保護已解除' : ''
     const soft = story.softYearNote ? `${story.softYearNote} ` : ''
@@ -1734,7 +1732,9 @@ export function useGame() {
       `${soft}推進一旬（${apNote}）｜進入${story.time.year}年${story.time.month}月${XUN_LABELS[story.time.xun]}｜商道進帳 ${tradeSilver} 銀兩｜路遇／切磋次數重置${restNote}${pendingTitle ? `｜事態：${pendingTitle}` : ''}`,
     )
     setStatusMsg(
-      pendingTitle && story.pendingEventId?.startsWith('main_')
+      pendingTitle &&
+        (story.pendingEventId?.startsWith('main_') ||
+          story.pendingEventId?.startsWith('arc_'))
         ? `故事節拍已降臨：${pendingTitle}。請於下方選擇。`
         : story.pendingEventId
           ? '旬內有事發生，請查看下方事件。'
@@ -1747,10 +1747,7 @@ export function useGame() {
       await ensureAudio()
       const eventId = state.pendingEventId
       if (!eventId) return
-      const rawDef =
-        MAIN_STORY_EVENTS.find((e) => e.id === eventId) ??
-        ENCOUNTER_EVENTS.find((e) => e.id === eventId) ??
-        NG_PLUS_ENCOUNTERS.find((e) => e.id === eventId)
+      const rawDef = getStoryEventById(eventId)
       if (!rawDef) return
       const lastEnding = detectEndingKey(state.flags)
       const def = flavorEventForNgPlus(rawDef, state.ngPlusCount, lastEnding)
@@ -1785,9 +1782,10 @@ export function useGame() {
           flagged.tradeRouteLevel + (resolvedChoice.tradeBump ?? 0),
         ngPlusReady: flagged.ngPlusReady || mainDone,
       }
-      let next: GameState = eventId.startsWith('main_')
-        ? applyMainBeatResolved(baseNext, eventId)
-        : ensureStoryRoute(baseNext)
+      let next: GameState =
+        eventId.startsWith('main_') || eventId.startsWith('arc_')
+          ? applyMainBeatResolved(baseNext, eventId)
+          : ensureStoryRoute(baseNext)
 
       if (resolvedChoice.startCombat) {
         persist(next)
@@ -1905,10 +1903,7 @@ export function useGame() {
   const linkedLocations = getLinkedLocations(state.locationId)
 
   const pendingEventBase = state.pendingEventId
-    ? (MAIN_STORY_EVENTS.find((e) => e.id === state.pendingEventId) ??
-      ENCOUNTER_EVENTS.find((e) => e.id === state.pendingEventId) ??
-      NG_PLUS_ENCOUNTERS.find((e) => e.id === state.pendingEventId) ??
-      null)
+    ? (getStoryEventById(state.pendingEventId) ?? null)
     : null
   const pendingEvent = pendingEventBase
     ? flavorEventForNgPlus(

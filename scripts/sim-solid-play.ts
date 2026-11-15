@@ -19,6 +19,7 @@ import {
 import {
   ENCOUNTER_EVENTS,
   MAIN_STORY_EVENTS,
+  getStoryEventById,
 } from '../src/data/events.ts'
 import {
   applyMainBeatResolved,
@@ -801,9 +802,7 @@ function actResolvePending(
   const eventId = state.pendingEventId
   if (!eventId) return { state, ok: false, note: '無待辦事件', blocked: 'none' }
   const raw =
-    MAIN_STORY_EVENTS.find((e) => e.id === eventId) ??
-    ENCOUNTER_EVENTS.find((e) => e.id === eventId) ??
-    NG_PLUS_ENCOUNTERS.find((e) => e.id === eventId)
+    getStoryEventById(eventId)
   if (!raw) return { state, ok: false, note: '事件缺失', blocked: 'data' }
   const def = flavorEventForNgPlus(
     raw,
@@ -827,13 +826,7 @@ function actResolvePending(
     }
   }
   const storyFlags = { ...flagged.storyFlags, [eventId]: true }
-  const mainDone = [
-    'main_y1_xiangyang',
-    'main_y2_huashan',
-    'main_y3_tomb',
-    'main_y4_xuanmu',
-    'main_y5_wharf',
-  ].every((k) => storyFlags[k])
+  const mainDone = Boolean(storyFlags['main_y5_wharf'])
   const baseNext = {
     ...flagged,
     pendingEventId: null,
@@ -842,7 +835,7 @@ function actResolvePending(
     tradeRouteLevel: flagged.tradeRouteLevel + (choice.tradeBump ?? 0),
     ngPlusReady: flagged.ngPlusReady || mainDone,
   }
-  const progressed = eventId.startsWith('main_')
+  const progressed = eventId.startsWith('main_') || eventId.startsWith('arc_')
     ? applyMainBeatResolved(baseNext, eventId)
     : ensureStoryRoute(baseNext)
   return {
@@ -1294,7 +1287,7 @@ function pathMainRush(seed: number): PathResult {
   let state = bootState
   const steps: StepRecord[] = []
   let guard = 0
-  while (!state.ngPlusReady && guard < 120) {
+  while (!state.ngPlusReady && guard < 220) {
     guard++
     if (state.pendingEventId) {
       state = record(steps, '了結事件', state, actResolvePending(state, rng, true))
