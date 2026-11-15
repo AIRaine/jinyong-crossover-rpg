@@ -14,11 +14,12 @@ import { getPrologueEvent } from '../src/data/prologue.ts'
 import {
   ENCOUNTER_EVENTS,
   MAIN_STORY_EVENTS,
-  getMainEventForYear,
-  getUnfinishedMainForYear,
-  pickEncounter,
-  pickRumors,
 } from '../src/data/events.ts'
+import {
+  applyMainBeatResolved,
+  resolveAdvanceXunStory,
+  ensureStoryRoute,
+} from '../src/lib/storyProgress.ts'
 import {
   getLinkedLocations,
   getLocationById,
@@ -425,10 +426,11 @@ function stepGather(state: GameState, rng: () => number, c: Counters): GameState
 
 function stepAdvanceXun(state: GameState, rng: () => number, c: Counters): GameState {
   bump(c, 'grind')
-  let xun = state.time.xun + 1
-  let month = state.time.month
-  let year = state.time.year
-  let day = state.time.day + 10
+  const routed = ensureStoryRoute(state)
+  let xun = routed.time.xun + 1
+  let month = routed.time.month
+  let year = routed.time.year
+  let day = routed.time.day + 10
   if (xun > 2) {
     xun = 0
     month += 1
@@ -437,45 +439,25 @@ function stepAdvanceXun(state: GameState, rng: () => number, c: Counters): GameS
       year += 1
     }
   }
-  const tradeSilver = 5 + state.tradeRouteLevel * 8
-  let pendingEventId = state.pendingEventId
-  const storyFlags = { ...state.storyFlags }
-  const yearMain = getMainEventForYear(year)
-  if (
-    year < 5 &&
-    yearMain &&
-    storyFlags[yearMain.id] &&
-    !getUnfinishedMainForYear(year, storyFlags)
-  ) {
-    year += 1
-    month = 1
-    xun = 0
-    day = Math.max(day, (year - 1) * 360 + 1)
-  }
-  const unfinishedMain = getUnfinishedMainForYear(year, storyFlags)
-  if (unfinishedMain && !pendingEventId) {
-    pendingEventId = unfinishedMain.id
-  } else if (!pendingEventId && rng() < 0.5) {
-    pendingEventId = pickEncounter(
-      year * 30 + month * 3 + xun + state.ngPlusCount * 17,
-      state.knownLocationIds,
-      {
-        currentLocationId: state.locationId,
-        ngPlusCount: state.ngPlusCount,
-      },
-    ).id
-  }
+  const tradeSilver = 5 + routed.tradeRouteLevel * 8
+  const story = resolveAdvanceXunStory(
+    routed,
+    { year, month, day, period: 'noon', xun },
+    routed.pendingEventId,
+    rng(),
+  )
   return {
-    ...state,
-    actionPoints: Math.min(state.maxActionPoints, state.actionPoints + 1),
-    time: { ...state.time, xun, month, year, day, period: 'noon' },
+    ...routed,
+    actionPoints: Math.min(routed.maxActionPoints, routed.actionPoints + 1),
+    time: story.time,
     currency: {
-      ...state.currency,
-      silver: state.currency.silver + tradeSilver,
+      ...routed.currency,
+      silver: routed.currency.silver + tradeSilver,
     },
-    rumors: pickRumors(year * 100 + month * 10 + xun, 3),
-    pendingEventId,
-    storyFlags,
+    rumors: story.rumors,
+    pendingEventId: story.pendingEventId,
+    unlockedArcIds: story.unlockedArcIds,
+    xunsSinceLastBeat: story.xunsSinceLastBeat,
     combatLoseStreak: 0,
     banditFightsThisXun: 0,
     sparFightsThisXun: 0,
@@ -513,19 +495,17 @@ function stepResolveEvent(
     'main_y4_xuanmu',
     'main_y5_wharf',
   ].every((k) => storyFlags[k])
-  let time = { ...rewarded.time }
-  if (eventId.startsWith('main_y') && !eventId.startsWith('main_y5') && time.year < 5) {
-    time = { ...time, year: Math.min(5, time.year + 1), month: 1, xun: 0 }
-  }
-  let next: GameState = {
+  const baseNext: GameState = {
     ...rewarded,
-    time,
     pendingEventId: null,
     storyFlags,
     lastOutcomeText: choice.outcomeText,
     tradeRouteLevel: rewarded.tradeRouteLevel + (choice.tradeBump ?? 0),
     ngPlusReady: rewarded.ngPlusReady || mainDone,
   }
+  let next: GameState = eventId.startsWith('main_')
+    ? applyMainBeatResolved(baseNext, eventId)
+    : ensureStoryRoute(baseNext)
   if (choice.startCombat) {
     const enc = makeBanditEncounter(
       buildPlayerCombatant(next),
@@ -935,18 +915,6 @@ function stepSilverSoup(state: GameState, c: Counters): GameState {
       stamina: Math.min(state.stats.maxStamina, state.stats.stamina + 25),
     },
   }
-}
-
-function mainYearKey(year: 1 | 2 | 3 | 4 | 5): string {
-  return (
-    {
-      1: 'main_y1_xiangyang',
-      2: 'main_y2_huashan',
-      3: 'main_y3_tomb',
-      4: 'main_y4_xuanmu',
-      5: 'main_y5_wharf',
-    } as const
-  )[year]
 }
 
 function snapshotOps(c: Counters): OpsSnapshot {

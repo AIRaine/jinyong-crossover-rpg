@@ -53,6 +53,8 @@ export default function App() {
               onResolveEvent={game.resolvePendingChoice}
               onFight={game.startBanditFight}
               onUsePill={game.useConsumable}
+              onClaimDaily={game.claimDailyLogin}
+              onClaimWeekly={game.claimWeeklyGoal}
             />
           )}
           {game.tab === 'character' && (

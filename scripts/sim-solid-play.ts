@@ -19,11 +19,12 @@ import {
 import {
   ENCOUNTER_EVENTS,
   MAIN_STORY_EVENTS,
-  getMainEventForYear,
-  getUnfinishedMainForYear,
-  pickEncounter,
-  pickRumors,
 } from '../src/data/events.ts'
+import {
+  applyMainBeatResolved,
+  ensureStoryRoute,
+  resolveAdvanceXunStory,
+} from '../src/lib/storyProgress.ts'
 import { MOCK_TOPUP_PACKS, SILVER_SHOP } from '../src/data/shop.ts'
 import { MARTIAL_ARTS, trainPotentialCost } from '../src/data/martialArts.ts'
 import { SECTS } from '../src/data/sects.ts'
@@ -490,10 +491,11 @@ function actAdvanceXun(state: GameState, rng: () => number): ActResult {
   if (!state.prologueDone) {
     return { state, ok: false, note: '序章未了', blocked: 'prologue' }
   }
-  let xun = state.time.xun + 1
-  let month = state.time.month
-  let year = state.time.year
-  let day = state.time.day + 10
+  const routed = ensureStoryRoute(state)
+  let xun = routed.time.xun + 1
+  let month = routed.time.month
+  let year = routed.time.year
+  let day = routed.time.day + 10
   if (xun > 2) {
     xun = 0
     month += 1
@@ -502,48 +504,28 @@ function actAdvanceXun(state: GameState, rng: () => number): ActResult {
       year += 1
     }
   }
-  const tradeSilver = 5 + state.tradeRouteLevel * 8
-  const storyFlags = { ...state.storyFlags }
-  const yearMain = getMainEventForYear(year)
-  if (
-    year < 5 &&
-    yearMain &&
-    storyFlags[yearMain.id] &&
-    !getUnfinishedMainForYear(year, storyFlags)
-  ) {
-    year += 1
-    month = 1
-    xun = 0
-    day = Math.max(day, (year - 1) * 360 + 1)
-  }
-  const unfinishedMain = getUnfinishedMainForYear(year, storyFlags)
-  let pendingEventId = state.pendingEventId
-  if (unfinishedMain && !pendingEventId) {
-    pendingEventId = unfinishedMain.id
-  } else if (!pendingEventId && rng() < 0.45) {
-    pendingEventId = pickEncounter(
-      year * 30 + month * 3 + xun + state.ngPlusCount * 17,
-      state.knownLocationIds,
-      {
-        currentLocationId: state.locationId,
-        ngPlusCount: state.ngPlusCount,
-      },
-    ).id
-  }
-  const apBefore = state.actionPoints
-  const apAfter = Math.min(state.maxActionPoints, apBefore + 1)
+  const tradeSilver = 5 + routed.tradeRouteLevel * 8
+  const story = resolveAdvanceXunStory(
+    routed,
+    { year, month, day, period: 'noon', xun },
+    routed.pendingEventId,
+    rng(),
+  )
+  const apBefore = routed.actionPoints
+  const apAfter = Math.min(routed.maxActionPoints, apBefore + 1)
   return {
     state: {
-      ...state,
+      ...routed,
       actionPoints: apAfter,
-      time: { ...state.time, xun, month, year, day, period: 'noon' },
+      time: story.time,
       currency: {
-        ...state.currency,
-        silver: state.currency.silver + tradeSilver,
+        ...routed.currency,
+        silver: routed.currency.silver + tradeSilver,
       },
-      rumors: pickRumors(year * 100 + month * 10 + xun, 3),
-      pendingEventId,
-      storyFlags,
+      rumors: story.rumors,
+      pendingEventId: story.pendingEventId,
+      unlockedArcIds: story.unlockedArcIds,
+      xunsSinceLastBeat: story.xunsSinceLastBeat,
       lastOutcomeText: null,
       combatLoseStreak: 0,
       banditFightsThisXun: 0,
@@ -852,29 +834,19 @@ function actResolvePending(
     'main_y4_xuanmu',
     'main_y5_wharf',
   ].every((k) => storyFlags[k])
-  let time = { ...flagged.time }
-  if (
-    eventId.startsWith('main_y') &&
-    !eventId.startsWith('main_y5') &&
-    time.year < 5
-  ) {
-    time = {
-      ...time,
-      year: Math.min(5, time.year + 1),
-      month: 1,
-      xun: 0,
-    }
+  const baseNext = {
+    ...flagged,
+    pendingEventId: null,
+    storyFlags,
+    lastOutcomeText: choice.outcomeText,
+    tradeRouteLevel: flagged.tradeRouteLevel + (choice.tradeBump ?? 0),
+    ngPlusReady: flagged.ngPlusReady || mainDone,
   }
+  const progressed = eventId.startsWith('main_')
+    ? applyMainBeatResolved(baseNext, eventId)
+    : ensureStoryRoute(baseNext)
   return {
-    state: {
-      ...flagged,
-      time,
-      pendingEventId: null,
-      storyFlags,
-      lastOutcomeText: choice.outcomeText,
-      tradeRouteLevel: flagged.tradeRouteLevel + (choice.tradeBump ?? 0),
-      ngPlusReady: flagged.ngPlusReady || mainDone,
-    },
+    state: progressed,
     ok: true,
     note: `了結事件 ${eventId}｜${choice.label}`,
   }

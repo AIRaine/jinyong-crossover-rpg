@@ -1,5 +1,5 @@
 /** 存檔結構版本；變更欄位時遞增並在 migrateSaveData 處理 */
-export const SAVE_VERSION = 9 as const
+export const SAVE_VERSION = 10 as const
 
 /** 底部分頁 */
 export type TabId =
@@ -324,6 +324,63 @@ export interface StoryEventDef {
   choices: StoryEventChoiceDef[]
 }
 
+/** 故事庫標籤（僅內部／開發用，勿在 UI 顯示原著對照） */
+export type StoryLibraryTag =
+  | 'shediao'
+  | 'shendiao'
+  | 'yitian'
+  | 'xiaoao'
+  | 'tianlong'
+  | 'luding'
+  | 'xiake'
+  | 'finale'
+  | 'other'
+
+export interface StoryBeatDef {
+  id: string
+  eventId: string
+  title: string
+}
+
+export interface StoryArcUnlockWhen {
+  /** 已完成節拍數下限 */
+  minBeatsDone?: number
+  /** 需先完成的弧 */
+  requireArcIds?: string[]
+}
+
+/** 可亂數／條件解鎖的故事弧 */
+export interface StoryArcDef {
+  id: string
+  title: string
+  summary: string
+  libraryTag: StoryLibraryTag
+  /** 開局抽取權重；0＝不進開局池 */
+  starterWeight: number
+  unlockWhen?: StoryArcUnlockWhen
+  beats: StoryBeatDef[]
+}
+
+export interface DailyLoginState {
+  /** 本地日 YYYY-MM-DD；空＝尚未領過 */
+  lastClaimDate: string
+  streak: number
+}
+
+export interface WeeklyGoalState {
+  id: string
+  kind: 'advance_xun' | 'visit_cold' | 'complete_beat'
+  title: string
+  target: number
+  progress: number
+  claimed: boolean
+}
+
+export interface WeeklyGoalsState {
+  weekKey: string
+  goals: WeeklyGoalState[]
+}
+
 /** 門派 */
 export interface SectDef {
   id: string
@@ -457,6 +514,18 @@ export interface GameState {
   /** 課金永久攻防加值（軟上限，避免 pay-to-win 壓垮無課） */
   paidAtkBonus: number
   paidDefBonus: number
+  /** 路線亂數種子（開局弧抽取） */
+  routeSeed: number
+  /** 已解鎖故事弧 id */
+  unlockedArcIds: string[]
+  /** 已完成節拍 id */
+  completedBeatIds: string[]
+  /** 距上次主線節拍了結後推進的旬數（冷卻用） */
+  xunsSinceLastBeat: number
+  /** 真實日曆日登 */
+  daily: DailyLoginState
+  /** 真實日曆週目標 */
+  weekly: WeeklyGoalsState
 }
 
 export interface ApplyRewardsResult {

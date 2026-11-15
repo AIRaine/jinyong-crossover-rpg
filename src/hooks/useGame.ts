@@ -17,14 +17,25 @@ import {
   trainPotentialCost,
 } from '../data/martialArts'
 import {
+  COLD_LOCATION_IDS,
   ENCOUNTER_EVENTS,
   MAIN_STORY_EVENTS,
   XUN_LABELS,
-  getMainEventForYear,
-  getUnfinishedMainForYear,
-  pickEncounter,
-  pickRumors,
 } from '../data/events'
+import {
+  bumpWeeklyGoal,
+  calendarDateKey,
+  DAILY_LOGIN_AP,
+  DAILY_LOGIN_POTENTIAL,
+  DAILY_LOGIN_SILVER,
+  ensureWeeklyGoals,
+} from '../data/storyArcs'
+import {
+  allMainBeatsDone,
+  applyMainBeatResolved,
+  ensureStoryRoute,
+  resolveAdvanceXunStory,
+} from '../lib/storyProgress'
 import {
   detectEndingKey,
   flavorEventForNgPlus,
@@ -413,7 +424,7 @@ export function useGame() {
             cleared.maxActionPoints,
           )
         : cleared.actionPoints
-      const next: GameState = {
+      let next: GameState = {
         ...cleared,
         locationId: target.id,
         locationName: target.name,
@@ -434,6 +445,10 @@ export function useGame() {
         actionPoints: apAfterNight,
         lastOutcomeText: null,
         lastCombatResult: null,
+      }
+      const cold = new Set<string>(COLD_LOCATION_IDS)
+      if (cold.has(target.id)) {
+        next = bumpWeeklyGoal(ensureWeeklyGoals(next), 'visit_cold', 1)
       }
       persist(next)
       playSound('page')
@@ -1658,10 +1673,11 @@ export function useGame() {
       return
     }
 
-    let xun = state.time.xun + 1
-    let month = state.time.month
-    let year = state.time.year
-    let day = state.time.day + 10
+    const routed = ensureStoryRoute(state)
+    let xun = routed.time.xun + 1
+    let month = routed.time.month
+    let year = routed.time.year
+    let day = routed.time.day + 10
     if (xun > 2) {
       xun = 0
       month += 1
@@ -1671,81 +1687,58 @@ export function useGame() {
       }
     }
 
-    const tradeSilver = 5 + state.tradeRouteLevel * 8
-    const rumors = pickRumors(year * 100 + month * 10 + xun, 3)
+    const tradeSilver = 5 + routed.tradeRouteLevel * 8
+    const story = resolveAdvanceXunStory(
+      routed,
+      { year, month, day, period: 'noon', xun },
+      routed.pendingEventId,
+      Math.random(),
+    )
 
-    // 傳奇加速：當年主線已完成且未滿五年 → 推進到下一年
-    let accelNote: string | null = null
-    const storyFlags = { ...state.storyFlags }
-    const yearMain = getMainEventForYear(year)
-    if (
-      year < 5 &&
-      yearMain &&
-      storyFlags[yearMain.id] &&
-      !getUnfinishedMainForYear(year, storyFlags)
-    ) {
-      year += 1
-      month = 1
-      xun = 0
-      day = Math.max(day, (year - 1) * 360 + 1)
-      accelNote = `傳奇加速：歲月倏忽，已至${year}年。`
-    }
-
-    // 主線：該年尚未完成則優先掛上（覆蓋空檔；並提高提醒）
-    const unfinishedMain = getUnfinishedMainForYear(year, storyFlags)
-    let pendingEventId = state.pendingEventId
-    if (unfinishedMain && !pendingEventId) {
-      pendingEventId = unfinishedMain.id
-    } else if (!pendingEventId && Math.random() < 0.45) {
-      const enc = pickEncounter(
-        year * 30 + month * 3 + xun + state.ngPlusCount * 17,
-        state.knownLocationIds,
-        {
-          currentLocationId: state.locationId,
-          ngPlusCount: state.ngPlusCount,
-        },
-      )
-      pendingEventId = enc.id
-    }
-
-    const apBefore = state.actionPoints
-    const apAfter = Math.min(state.maxActionPoints, apBefore + 1)
+    const apBefore = routed.actionPoints
+    const apAfter = Math.min(routed.maxActionPoints, apBefore + 1)
     const apNote =
       apAfter > apBefore ? 'AP +1（上限內）' : 'AP 已滿則不增'
 
-    const streakCleared = state.combatLoseStreak > 0
-    persist({
-      ...state,
-      actionPoints: apAfter,
-      time: { ...state.time, xun, month, year, day, period: 'noon' },
-      currency: {
-        ...state.currency,
-        silver: state.currency.silver + tradeSilver,
+    const streakCleared = routed.combatLoseStreak > 0
+    let next: GameState = bumpWeeklyGoal(
+      {
+        ...routed,
+        actionPoints: apAfter,
+        time: story.time,
+        currency: {
+          ...routed.currency,
+          silver: routed.currency.silver + tradeSilver,
+        },
+        rumors: story.rumors,
+        pendingEventId: story.pendingEventId,
+        unlockedArcIds: story.unlockedArcIds,
+        xunsSinceLastBeat: story.xunsSinceLastBeat,
+        lastOutcomeText: null,
+        combatLoseStreak: 0,
+        banditFightsThisXun: 0,
+        sparFightsThisXun: 0,
       },
-      rumors,
-      pendingEventId,
-      storyFlags,
-      lastOutcomeText: null,
-      combatLoseStreak: 0,
-      banditFightsThisXun: 0,
-      sparFightsThisXun: 0,
-    })
+      'advance_xun',
+      1,
+    )
+    next = ensureWeeklyGoals(next)
+    persist(next)
     playSound('page')
-    const mainHint = unfinishedMain
-      ? `｜主線待決：${unfinishedMain.title}`
-      : ''
+    const pendingTitle = story.pendingEventId
+      ? MAIN_STORY_EVENTS.find((e) => e.id === story.pendingEventId)?.title
+      : null
     const restNote = streakCleared ? '｜連敗保護已解除' : ''
+    const soft = story.softYearNote ? `${story.softYearNote} ` : ''
     showToast(
-      `${accelNote ? `${accelNote} ` : ''}推進一旬（${apNote}）｜進入${year}年${month}月${XUN_LABELS[xun]}｜商道進帳 ${tradeSilver} 銀兩｜路遇／切磋次數重置${restNote}${mainHint}`,
+      `${soft}推進一旬（${apNote}）｜進入${story.time.year}年${story.time.month}月${XUN_LABELS[story.time.xun]}｜商道進帳 ${tradeSilver} 銀兩｜路遇／切磋次數重置${restNote}${pendingTitle ? `｜事態：${pendingTitle}` : ''}`,
     )
     setStatusMsg(
-      unfinishedMain && pendingEventId === unfinishedMain.id
-        ? `當年主線已降臨：${unfinishedMain.title}。請於下方選擇。`
-        : unfinishedMain
-          ? `提醒：${unfinishedMain.title} 尚未了結。`
-          : pendingEventId
-            ? '旬內有事發生，請查看下方事件。'
-            : '旬日平穩，傳聞已更新。',
+      pendingTitle && story.pendingEventId?.startsWith('main_')
+        ? `故事節拍已降臨：${pendingTitle}。請於下方選擇。`
+        : story.pendingEventId
+          ? '旬內有事發生，請查看下方事件。'
+          : '旬日平穩，傳聞已更新。',
     )
   }, [ensureAudio, persist, showToast, state])
 
@@ -1780,34 +1773,11 @@ export function useGame() {
         }
       }
       const storyFlags = { ...flagged.storyFlags, [eventId]: true }
-      const mainDone = [
-        'main_y1_xiangyang',
-        'main_y2_huashan',
-        'main_y3_tomb',
-        'main_y4_xuanmu',
-        'main_y5_wharf',
-      ].every((k) => storyFlags[k])
+      const mainDone = allMainBeatsDone(storyFlags)
 
-      // 主線了結後傳奇加速：立刻跨入下一年（五年結局除外）
-      let time = { ...rewarded.time }
-      let accelMsg = ''
-      if (
-        eventId.startsWith('main_y') &&
-        !eventId.startsWith('main_y5') &&
-        time.year < 5
-      ) {
-        time = {
-          ...time,
-          year: Math.min(5, time.year + 1),
-          month: 1,
-          xun: 0,
-        }
-        accelMsg = `｜傳奇加速至${time.year}年`
-      }
-
-      let next: GameState = {
+      // 階段 A：取消了結即傳奇加速；主線節拍改冷卻（見 storyProgress）
+      const baseNext: GameState = {
         ...flagged,
-        time,
         pendingEventId: null,
         storyFlags,
         lastOutcomeText: resolvedChoice.outcomeText,
@@ -1815,12 +1785,13 @@ export function useGame() {
           flagged.tradeRouteLevel + (resolvedChoice.tradeBump ?? 0),
         ngPlusReady: flagged.ngPlusReady || mainDone,
       }
+      let next: GameState = eventId.startsWith('main_')
+        ? applyMainBeatResolved(baseNext, eventId)
+        : ensureStoryRoute(baseNext)
 
       if (resolvedChoice.startCombat) {
         persist(next)
-        showToast(
-          `${messages.join(' · ') || '事件了結，戰局開打'}${accelMsg}`,
-        )
+        showToast(messages.join(' · ') || '事件了結，戰局開打')
         setCombatKind('bandit')
         const encounter = makeBanditEncounter(
           buildPlayerCombatant(next),
@@ -1839,17 +1810,94 @@ export function useGame() {
       playSound('success')
       showToast(
         mainDone && eventId.startsWith('main_y5')
-          ? `${messages.join(' · ') || '事件了結'}｜五年主線畢，可至系統結算 NG+`
-          : `${messages.join(' · ') || '事件了結'}${accelMsg}`,
+          ? `${messages.join(' · ') || '事件了結'}｜主線節拍齊備，可至系統結算 NG+`
+          : `${messages.join(' · ') || '事件了結'}｜下一段需再歷數旬`,
       )
-      if (accelMsg) {
-        const nextMain = getUnfinishedMainForYear(time.year, storyFlags)
-        setStatusMsg(
-          nextMain
-            ? `已進入${time.year}年。下一段主線：${nextMain.title}（推進旬制可觸發）。`
-            : `已進入${time.year}年。`,
-        )
+      setStatusMsg(
+        mainDone
+          ? '主要故事節拍已齊。可繼續遊歷或至系統結算多周目。'
+          : '節拍了結。推進數旬後，下一段故事可能降臨。',
+      )
+    },
+    [ensureAudio, persist, showToast, state],
+  )
+
+  const claimDailyLogin = useCallback(async () => {
+    await ensureAudio()
+    if (!state.prologueDone) {
+      showToast('序章未了')
+      return
+    }
+    const today = calendarDateKey()
+    if (state.daily.lastClaimDate === today) {
+      playSound('fail')
+      showToast('今日已領過日登')
+      return
+    }
+    const yesterday = new Date()
+    yesterday.setDate(yesterday.getDate() - 1)
+    const yKey = calendarDateKey(yesterday)
+    const streak =
+      state.daily.lastClaimDate === yKey ? state.daily.streak + 1 : 1
+    const bonusSilver = Math.min(15, Math.max(0, streak - 1) * 3)
+    const next: GameState = {
+      ...ensureStoryRoute(state),
+      daily: { lastClaimDate: today, streak },
+      currency: {
+        ...state.currency,
+        silver: state.currency.silver + DAILY_LOGIN_SILVER + bonusSilver,
+      },
+      potential: state.potential + DAILY_LOGIN_POTENTIAL,
+      actionPoints: Math.min(
+        state.maxActionPoints,
+        state.actionPoints + DAILY_LOGIN_AP,
+      ),
+    }
+    persist(next)
+    playSound('success')
+    showToast(
+      `日登領取：銀兩 +${DAILY_LOGIN_SILVER + bonusSilver}、潛能 +${DAILY_LOGIN_POTENTIAL}、AP +${DAILY_LOGIN_AP}（連登 ${streak} 日）`,
+    )
+  }, [ensureAudio, persist, showToast, state])
+
+  const claimWeeklyGoal = useCallback(
+    async (goalId: string) => {
+      await ensureAudio()
+      const synced = ensureWeeklyGoals(ensureStoryRoute(state))
+      const goal = synced.weekly.goals.find((g) => g.id === goalId)
+      if (!goal) {
+        playSound('fail')
+        showToast('找不到該週目標')
+        return
       }
+      if (goal.claimed) {
+        playSound('fail')
+        showToast('已領過')
+        return
+      }
+      if (goal.progress < goal.target) {
+        playSound('fail')
+        showToast('尚未達成')
+        return
+      }
+      const next: GameState = {
+        ...synced,
+        weekly: {
+          ...synced.weekly,
+          goals: synced.weekly.goals.map((g) =>
+            g.id === goalId ? { ...g, claimed: true } : g,
+          ),
+        },
+        currency: {
+          ...synced.currency,
+          silver: synced.currency.silver + 40,
+        },
+        potential: synced.potential + 4,
+        inspiration: synced.inspiration + 2,
+      }
+      persist(next)
+      playSound('success')
+      showToast('週目標領取：銀兩 +40、潛能 +4、靈感 +2')
     },
     [ensureAudio, persist, showToast, state],
   )
@@ -1928,5 +1976,7 @@ export function useGame() {
     contributeSect,
     advanceXun,
     resolvePendingChoice,
+    claimDailyLogin,
+    claimWeeklyGoal,
   }
 }

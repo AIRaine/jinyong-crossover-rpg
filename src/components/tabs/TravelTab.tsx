@@ -1,9 +1,10 @@
 import { ALCHEMY_RECIPES, MATERIAL_IDS } from '../../data/alchemy'
+import { farTravelHints, XUN_LABELS } from '../../data/events'
 import {
-  farTravelHints,
-  getUnfinishedMainForYear,
-  XUN_LABELS,
-} from '../../data/events'
+  listActiveArcSummaries,
+  STORY_BEAT_COOLDOWN_XUN,
+} from '../../data/storyArcs'
+import { ensureStoryRoute } from '../../lib/storyProgress'
 import {
   getLocationById,
   LOCATION_KIND_LABEL,
@@ -37,6 +38,8 @@ interface TravelTabProps {
   onResolveEvent: (choice: StoryEventChoiceDef) => void
   onFight: () => void
   onUsePill: (itemId: string) => void
+  onClaimDaily: () => void
+  onClaimWeekly: (goalId: string) => void
 }
 
 export function TravelTab({
@@ -53,6 +56,8 @@ export function TravelTab({
   onResolveEvent,
   onFight,
   onUsePill,
+  onClaimDaily,
+  onClaimWeekly,
 }: TravelTabProps) {
   const prologue = prologueEvent
   const showPrologue =
@@ -106,18 +111,24 @@ export function TravelTab({
     )
   }
 
+  const routed = ensureStoryRoute(state)
   const current = getLocationById(state.locationId)
   const xun = state.time.xun ?? 0
   const hpPill = state.inventory.find((i) => i.id === MATERIAL_IDS.hpPill)
   const qiPill = state.inventory.find((i) => i.id === MATERIAL_IDS.qiPill)
-  const unfinishedMain = getUnfinishedMainForYear(
-    state.time.year,
-    state.storyFlags,
-  )
-  const mainLoc = unfinishedMain?.locationId
-    ? getLocationById(unfinishedMain.locationId)
+  const arcRows = listActiveArcSummaries(routed)
+  const pendingArc = pendingEvent?.id?.startsWith('main_')
+    ? pendingEvent
     : null
+  const mainLoc = pendingArc?.locationId
+    ? getLocationById(pendingArc.locationId)
+    : null
+  const coolLeft = Math.max(
+    0,
+    STORY_BEAT_COOLDOWN_XUN - routed.xunsSinceLastBeat,
+  )
   const guideTips = farTravelHints(state.knownLocationIds)
+  const weeklyGoals = routed.weekly.goals
   const fightBlock = getBanditStartBlock(state)
   const fightLocked = fightBlock !== null
   const fightButtonLabel = (() => {
@@ -149,10 +160,58 @@ export function TravelTab({
         <p className="mt-2 text-sm leading-7 text-paper/85">
           {current?.description ?? '你站在陌生的路口。'}
         </p>
-        {unfinishedMain && (
+        <div className="mt-3 space-y-2 rounded-lg bg-ink-950/50 px-3 py-2 ring-1 ring-paper/10">
+          <p className="text-[11px] tracking-wide text-cinnabar-soft">日登／本週</p>
+          <button
+            type="button"
+            onClick={onClaimDaily}
+            className="touch-btn w-full rounded-lg border border-teal-800/50 bg-teal-950/40 px-3 py-2 text-left text-xs text-teal-50"
+          >
+            領取今日登入（銀兩／潛能／AP）
+          </button>
+          <ul className="space-y-1.5">
+            {weeklyGoals.map((g) => (
+              <li
+                key={g.id}
+                className="flex items-center justify-between gap-2 text-[11px] text-paper/80"
+              >
+                <span>
+                  {g.title}（{g.progress}/{g.target}）
+                </span>
+                <button
+                  type="button"
+                  disabled={g.claimed || g.progress < g.target}
+                  onClick={() => onClaimWeekly(g.id)}
+                  className="touch-btn shrink-0 rounded-md border border-paper/20 px-2 py-1 disabled:opacity-40"
+                >
+                  {g.claimed ? '已領' : '領獎'}
+                </button>
+              </li>
+            ))}
+          </ul>
+        </div>
+        {arcRows.length > 0 && (
+          <div className="mt-3 rounded-lg bg-ink-950/50 px-3 py-2 text-[11px] leading-relaxed text-paper/75 ring-1 ring-paper/10">
+            <p className="text-cinnabar-soft">進行中故事弧</p>
+            <ul className="mt-1 space-y-1">
+              {arcRows.map((row) => (
+                <li key={`${row.arcTitle}-${row.beatTitle}`}>
+                  {row.arcTitle} · {row.beatTitle}
+                  {row.done ? '（已了）' : '（未了）'}
+                </li>
+              ))}
+            </ul>
+            {coolLeft > 0 && (
+              <p className="mt-1 text-paper/45">
+                下一段節拍約需再推 {coolLeft} 旬
+              </p>
+            )}
+          </div>
+        )}
+        {pendingArc && (
           <p className="mt-3 rounded-lg bg-amber-950/45 px-3 py-2 text-xs leading-relaxed text-amber-100 ring-1 ring-amber-700/40">
-            主線提醒：{unfinishedMain.title}
-            {mainLoc ? `（線索地：${mainLoc.name}）` : ''}。推進旬制可觸發；了結後傳奇加速跨年。
+            故事節拍：{pendingArc.title}
+            {mainLoc ? `（線索地：${mainLoc.name}）` : ''}。了結後需再歷數旬，不會瞬間跨年。
           </p>
         )}
         {state.combatLoseStreak > 0 && (
