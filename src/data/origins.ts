@@ -7,7 +7,7 @@ import type { OriginDef, TechNodeDef } from '../types/game'
 export const ORIGINS: OriginDef[] = [
   {
     id: 'cat_medical',
-    name: '懸壺一脈（醫療）',
+    name: '醫療',
     summary: '救人、止血、分級檢傷——雨夜破廟也能開臨時診療。',
     flavor: '聽診器、藥箱或急救證，在江湖常被當成護心鏡。',
     bio: '你來自現代醫療體系：急診、護理、藥學或相關支援皆可。值班、交接、家屬情緒管理，是你的日常副本。',
@@ -38,7 +38,7 @@ export const ORIGINS: OriginDef[] = [
   },
   {
     id: 'cat_tech',
-    name: '奇技格物（科技）',
+    name: '科技',
     summary: '程式、工程、機關腦——沒訊號也能當手電筒用。',
     flavor: '你習慣把問題拆成可重現步驟，哪怕對方是鐵門。',
     bio: '資訊、土木、電機或任何「會修會拆」的現代技術職。文件、版本、風險清單是你的心法。',
@@ -69,7 +69,7 @@ export const ORIGINS: OriginDef[] = [
   },
   {
     id: 'cat_finance',
-    name: '金盤算門（金融）',
+    name: '金融',
     summary: '風控、報價、談判——把刀光也看成波動率。',
     flavor: '你穿越時可能還想著「今天的停損在哪」。',
     bio: '銀行、證券、會計、分析或相關金融職。壓力來自數字與期限，不是刀——直到現在。',
@@ -100,7 +100,7 @@ export const ORIGINS: OriginDef[] = [
   },
   {
     id: 'cat_food',
-    name: '鼎鼐煙火（餐飲）',
+    name: '餐飲',
     summary: '火候、人情、一碗熱湯——多數恩怨從胃開始談。',
     flavor: '調料袋比兵刃先被認出來。',
     bio: '廚房、吧台、外場或餐飲經營。燙手、罵菜、偷偷加宵夜，都是修練。',
@@ -131,7 +131,7 @@ export const ORIGINS: OriginDef[] = [
   },
   {
     id: 'cat_force',
-    name: '金戈鐵骨（軍警體能）',
+    name: '軍警／體能',
     summary: '紀律、體能、反應——短跑與站姿都是心法。',
     flavor: '你第一反應常是糾正對方出拳重心。',
     bio: '軍警消、保全、教練或職業運動相關。汗水誠實：姿勢錯了會痛。',
@@ -162,7 +162,7 @@ export const ORIGINS: OriginDef[] = [
   },
   {
     id: 'cat_edu',
-    name: '青衿問學（文教）',
+    name: '教育／學術',
     summary: '講義、考據、辯證——把江湖當田野現場。',
     flavor: '原子筆與手札，在此常被當成細短鐵籤。',
     bio: '教師、研究者、補教或知識工作。你相信紀錄與推理，勝過嗓門。',
@@ -193,7 +193,7 @@ export const ORIGINS: OriginDef[] = [
   },
   {
     id: 'cat_media',
-    name: '筆墨傳影（創作媒體）',
+    name: '創作／媒體',
     summary: '鏡頭感、文案、臨場——穿越後仍想「跟觀眾打招呼」。',
     flavor: '補光燈一亮，有人喊妖光。',
     bio: '記者、直播、設計、小編或內容創作者。演算法曾是喜怒無常的掌門。',
@@ -224,7 +224,7 @@ export const ORIGINS: OriginDef[] = [
   },
   {
     id: 'cat_service',
-    name: '驛路輕功（服務物流）',
+    name: '服務／物流',
     summary: '時效、笑容、路程——風雨無阻是你的輕功底子。',
     flavor: '你還習慣聽「下一單」提示音。',
     bio: '外送、空服、客服、零售或物流第一線。超時比刀傷可怕；程序與耐心是裝備。',
@@ -256,7 +256,7 @@ export const ORIGINS: OriginDef[] = [
   },
   {
     id: 'cat_bahang',
-    name: '夜宴圓場（八大）',
+    name: '八大',
     summary: '八大行業：讀空氣、圓場、擋酒——飯局你未必輸。',
     flavor: '潤喉糖與名片夾是上班工具，不是風月道具。',
     bio: '夜場公關、櫃檯、經紀助理那一掛。排班、安撫難搞客人、把衝突變成「再來一盤水果」。練的是察言觀色，不是低俗橋段。',
@@ -288,7 +288,7 @@ export const ORIGINS: OriginDef[] = [
   },
   {
     id: 'cat_unemployed',
-    name: '白身閑雲（無業）',
+    name: '無業',
     summary: '待業、被裁、躺平——空白檔期變成江湖新手光環。',
     flavor: '點數卡與衛生紙，是你的現代遺跡。',
     bio: '合約結束、優退、或主動休息一個季度。你學會低成本把一天過完：圖書館、免費網路、泡麵哲學。',

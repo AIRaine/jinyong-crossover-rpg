@@ -70,7 +70,7 @@ export function OriginSelect({ onSelect, ngPlusGuide }: OriginSelectProps) {
           {step === 'job' && '今生業緣何在？'}
           {step === 'identity' && '江湖如何稱你？'}
           {step === 'transit' && '時空裂隙已開'}
-          {step === 'confirm' && '踏入襄揚雨夜之前'}
+          {step === 'confirm' && '墜入襄揚雨夜之前'}
         </h1>
         {ngPlusGuide && step === 'pick' && (
           <p className="mt-2 rounded-lg bg-amber-950/50 px-3 py-2 text-xs leading-relaxed text-amber-100 ring-1 ring-amber-700/35">
@@ -81,7 +81,7 @@ export function OriginSelect({ onSelect, ngPlusGuide }: OriginSelectProps) {
           {step === 'pick' &&
             '約十個大類決定天賦；八大與無業也在其中。可捲動展開。'}
           {step === 'job' &&
-            '自填職稱可空白——空白則用大類預設名。'}
+            '寫你在現代的工作或身分即可；空白則用大類預設名。'}
           {step === 'identity' && '性別與暱稱可之後再改。'}
           {step === 'transit' && '請慢慢讀完，再進破廟。'}
           {step === 'confirm' && '確認後寫入存檔，序章開始。'}
@@ -114,7 +114,7 @@ export function OriginSelect({ onSelect, ngPlusGuide }: OriginSelectProps) {
           </p>
           <p className="mt-1 text-xs text-paper/50">{origin.summary}</p>
           <label className="mt-4 block text-xs text-paper/55">
-            業緣職稱（可空白）
+            敢問今生所操何業？（可空白）
           </label>
           <input
             type="text"
