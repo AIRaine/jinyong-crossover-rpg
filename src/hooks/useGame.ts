@@ -330,7 +330,9 @@ export function useGame() {
         : target.travelStamina
       if (state.stats.stamina < cost) {
         playSound('fail')
-        showToast(`精力不足（需要 ${cost}，目前 ${state.stats.stamina}）`)
+        showToast(
+          `精力不足（需要 ${cost} 精力，目前 ${state.stats.stamina} 精力）`,
+        )
         return
       }
 
@@ -425,7 +427,7 @@ export function useGame() {
       if (state.inspiration < node.inspirationCost) {
         playSound('fail')
         showToast(
-          `靈感不足：需要 ${node.inspirationCost}，目前只有 ${state.inspiration}`,
+          `靈感不足：需要 ${node.inspirationCost} 靈感，目前只有 ${state.inspiration} 靈感`,
         )
         return
       }
@@ -509,7 +511,9 @@ export function useGame() {
       const cost = refineCostForLevel(def.baseRefineCost, owned.refineLevel)
       if (state.currency.silver < cost) {
         playSound('fail')
-        showToast(`銀兩不足：需要 ${cost}，目前 ${state.currency.silver}`)
+        showToast(
+          `銀兩不足：需要 ${cost} 銀兩，目前 ${state.currency.silver} 銀兩`,
+        )
         return
       }
       const nextOwned = state.ownedEquipment.map((e) =>
@@ -547,7 +551,7 @@ export function useGame() {
       const cost = 40
       if (state.currency.silver < cost) {
         playSound('fail')
-        showToast(`銀兩不足（淬火需 ${cost}）`)
+        showToast(`銀兩不足（淬火需 ${cost} 銀兩）`)
         return
       }
       const inv = consumeItem(state.inventory, MATERIAL_IDS.ore, 1)
@@ -650,7 +654,9 @@ export function useGame() {
         const learnCost = 5
         if (state.potential < learnCost) {
           playSound('fail')
-          showToast(`潛能不足：學習需 ${learnCost}，目前 ${state.potential}`)
+          showToast(
+            `潛能不足：學習需 ${learnCost} 潛能，目前 ${state.potential} 潛能`,
+          )
           return
         }
         persist({
@@ -671,7 +677,9 @@ export function useGame() {
       const cost = trainPotentialCost(level)
       if (state.potential < cost) {
         playSound('fail')
-        showToast(`潛能不足：需要 ${cost}，目前 ${state.potential}`)
+        showToast(
+          `潛能不足：需要 ${cost} 潛能，目前 ${state.potential} 潛能`,
+        )
         return
       }
 
@@ -1041,7 +1049,7 @@ export function useGame() {
       const cost = count === 1 ? GACHA_SINGLE_COST : GACHA_TEN_COST
       if (state.currency.yuanbao < cost) {
         playSound('fail')
-        showToast(`元寶不足（需 ${cost}）`)
+        showToast(`元寶不足（需 ${cost} 元寶）`)
         return
       }
       const pulled = pullMany(count, {
@@ -1362,7 +1370,7 @@ export function useGame() {
       const aff = state.affinity[npcId] ?? 0
       if (aff < 30) {
         playSound('fail')
-        showToast(`好感不足（需 30，目前 ${aff}）`)
+        showToast(`好感不足（需 30 好感，目前 ${aff}）`)
         return
       }
       persist({ ...state, partyIds: [...state.partyIds, npcId] })
@@ -1428,12 +1436,12 @@ export function useGame() {
       }
       if (state.stats.level < sect.entry.minLevel) {
         playSound('fail')
-        showToast(`等級不足（需 ${sect.entry.minLevel}）`)
+        showToast(`等級不足（需等級 ${sect.entry.minLevel}）`)
         return
       }
       if (state.currency.silver < sect.entry.minSilver) {
         playSound('fail')
-        showToast(`銀兩不足（需 ${sect.entry.minSilver}）`)
+        showToast(`銀兩不足（需 ${sect.entry.minSilver} 銀兩）`)
         return
       }
       if (
@@ -1441,7 +1449,7 @@ export function useGame() {
         state.comprehension < sect.entry.minComprehension
       ) {
         playSound('fail')
-        showToast(`悟性不足（需 ${sect.entry.minComprehension}）`)
+        showToast(`悟性不足（需 ${sect.entry.minComprehension} 悟性）`)
         return
       }
       const grants = SECT_MARTIAL_GRANTS[sectId]?.onJoin ?? []
@@ -1525,7 +1533,7 @@ export function useGame() {
     const cost = 2
     if (state.actionPoints < cost) {
       playSound('fail')
-      showToast(`推進旬制需 ${cost} AP`)
+      showToast(`推進一旬需至少 ${cost} AP（耗 2 AP，回 3 AP）`)
       return
     }
 

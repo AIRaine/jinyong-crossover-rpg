@@ -163,28 +163,35 @@ export function CharacterTab({
                   <button
                     type="button"
                     onClick={() => onRefine(owned.uid)}
-                    className="touch-btn rounded-lg bg-amber-900/50 py-2 text-[11px] text-amber-100"
+                    className="touch-btn rounded-lg bg-amber-900/50 px-1 py-2 text-[10px] leading-tight text-amber-100"
                   >
-                    精煉
                     {owned.refineLevel < 15
-                      ? ` ${refineCostForLevel(def.baseRefineCost, owned.refineLevel)}銀`
-                      : ' MAX'}
+                      ? `精煉（${refineCostForLevel(def.baseRefineCost, owned.refineLevel)} 銀兩）`
+                      : '精煉 MAX'}
                   </button>
                   <button
                     type="button"
                     onClick={() => onQuench(owned.uid)}
-                    className="touch-btn rounded-lg bg-orange-950/60 py-2 text-[11px] text-orange-100 disabled:opacity-40"
+                    className="touch-btn rounded-lg bg-orange-950/60 px-1 py-2 text-[10px] leading-tight text-orange-100 disabled:opacity-40"
                     disabled={!canQuench || owned.quenched}
                   >
-                    {owned.quenched ? '已淬火' : canQuench ? '淬火' : '需科技'}
+                    {owned.quenched
+                      ? '已淬火'
+                      : canQuench
+                        ? '淬火（40 銀兩）'
+                        : '淬火需科技'}
                   </button>
                   <button
                     type="button"
                     onClick={() => onPoison(owned.uid)}
-                    className="touch-btn rounded-lg bg-emerald-950/60 py-2 text-[11px] text-emerald-100 disabled:opacity-40"
+                    className="touch-btn rounded-lg bg-emerald-950/60 px-1 py-2 text-[10px] leading-tight text-emerald-100 disabled:opacity-40"
                     disabled={!canPoison || owned.poisoned}
                   >
-                    {owned.poisoned ? '已塗毒' : canPoison ? '塗毒' : '需科技'}
+                    {owned.poisoned
+                      ? '已塗毒'
+                      : canPoison
+                        ? '塗毒（草藥×2）'
+                        : '塗毒需科技'}
                   </button>
                 </div>
               )}
