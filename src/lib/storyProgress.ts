@@ -31,7 +31,7 @@ export function ensureStoryRoute(state: GameState): GameState {
   }
   let unlockedArcIds = next.unlockedArcIds
   if (!unlockedArcIds.length) {
-    unlockedArcIds = rollStarterArcs(routeSeed)
+    unlockedArcIds = rollStarterArcs(routeSeed, next.ngPlusCount)
   }
   unlockedArcIds = refreshUnlockedArcs({
     ...next,

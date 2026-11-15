@@ -359,6 +359,148 @@ const MAIN_FLAVOR: Record<string, Record<NgTier, MainFlavor>> = {
       },
     },
   },
+  arc_liancheng_3: {
+    1: {
+      summary: '空匣再開——你記得信上那句，卻仍想確認字跡。',
+      paragraphs: [
+        '匣仍空。荻雲看你一眼：「二周目還來拆？」你回：「確認字沒變。」',
+        '百曉笙在門外喊升級套餐。你給了三星半——服務態度微調。',
+        '信上那句貪者自困，讀第二次仍刺耳，卻比較像提醒而非判決。',
+      ],
+      choices: {
+        lc3_keep: {
+          outcomeText:
+            '你把心法縫進另一層夾層。荻雲笑：「這次藏得比較專業。」',
+          rewardsPatch: { potential: 2, inspiration: 2 },
+        },
+        lc3_public: {
+          outcomeText:
+            '告示多了一行：回頭客請勿劇透。尋寶客罵聲依舊，仇殺仍少。',
+          rewardsPatch: { exp: 10 },
+        },
+        lc3_sell: {
+          outcomeText:
+            '話本改成「空匣續集」。分成略增，荻雲堅持要具名感謝穿越客。',
+          rewardsPatch: { silver: 15 },
+        },
+      },
+    },
+    2: {
+      summary: '三周目空匣——故事比寶藏還值錢。',
+      paragraphs: [
+        '你幾乎能背出機關流程。荻雲說：「那我們改走側門。」',
+        '空匣裡多了一張小紙：歡迎回來，別貪。字跡像玩笑。',
+        '你決定這周目把「不貪」寫進週目標。',
+      ],
+      choices: {
+        lc3_keep: {
+          outcomeText: '心法第三遍仍有新理解。你把註解寫在現代備忘錄——沒訊號也能存。',
+          rewardsPatch: { potential: 3, inspiration: 3 },
+        },
+        lc3_public: {
+          outcomeText: '告示成了經典。天機閣收授權費分你一成——你只要茶錢。',
+          rewardsPatch: { silver: 25, exp: 15 },
+        },
+        lc3_sell: {
+          outcomeText: '話本三部曲完結。你與荻雲分銀，順便拒絕影劇化邀約。',
+          rewardsPatch: { silver: 30, inspiration: 2 },
+        },
+      },
+    },
+  },
+  arc_feihu_3: {
+    1: {
+      summary: '刀名放下過一次，仍要再走一趟關道。',
+      paragraphs: [
+        '狐斐在雁門等你：「二周目也來送？」你遞上熱水。',
+        '仇冊灰燼早散，風砂卻還記得刀痕。',
+        '你說：「路還在。」他點頭，這次笑得比較開。',
+      ],
+      choices: {
+        fh3_teach: {
+          outcomeText:
+            '止殺一式你記得更穩。狐斐：「停手的時機，第二遍才真懂。」',
+          rewardsPatch: { potential: 2 },
+        },
+        fh3_escort: {
+          outcomeText: '關內茶仍熱。丐幇消息多了一條：雪蒼嶺暫無新仇。',
+          rewardsPatch: { exp: 10 },
+        },
+        fh3_part: {
+          outcomeText: '雪蒼石換成書籤第二枚。你說：「收集癖。」他說：「也好。」',
+          rewardsPatch: { inspiration: 2 },
+        },
+      },
+    },
+    2: {
+      summary: '三周目關道：止殺已成肌肉記憶。',
+      paragraphs: [
+        '狐斐幾乎不等你：「熱水呢？」你預先倒好。',
+        '刀入鞘的聲音你聽過兩次，第三次像老朋友敲門。',
+        '有人問刀名，他答：「改用法了。」你在旁邊點頭當人證。',
+      ],
+      choices: {
+        fh3_teach: {
+          outcomeText: '他改教你「如何教別人停手」。你覺得這比劍意難，也更值。',
+          rewardsPatch: { potential: 3, inspiration: 2 },
+        },
+        fh3_escort: {
+          outcomeText: '护送變成散步。關內有人認你：「又是送刀客的那位。」',
+          rewardsPatch: { exp: 15, silver: 10 },
+        },
+        fh3_part: {
+          outcomeText: '道別縮短成拱手。石在袋裡輕響，像週目標完成的提示音。',
+          rewardsPatch: { inspiration: 3 },
+        },
+      },
+    },
+  },
+  arc_bixue_3: {
+    1: {
+      summary: '殘鋒再收，問句仍在。',
+      paragraphs: [
+        '園承志看你：「二周目還問收屍？」你回：「還問。」',
+        '義莊粥香與上周目重疊七成，排隊法你又優化了一版。',
+        '華嶠夜風裡，收勢比出招更像答案。',
+      ],
+      choices: {
+        bx3_swear: {
+          outcomeText: '私約續簽。刃意更收，心卻更亮。',
+          rewardsPatch: { potential: 2 },
+        },
+        bx3_write: {
+          outcomeText: '小冊出第二版，附「排隊分流圖」。天機閣願意加印。',
+          rewardsPatch: { silver: 10, inspiration: 2 },
+        },
+        bx3_wander: {
+          outcomeText: '你下山，這次故意繞義莊門口看一眼燈火，再走。',
+          rewardsPatch: { inspiration: 2 },
+        },
+      },
+    },
+    2: {
+      summary: '三周目問心：答案可以重複，理由可以更新。',
+      paragraphs: [
+        '園承志把布套遞給你：「你來收。」信任比劍重。',
+        '有人把你的義莊方法抄去別城。你說好，別署名也行。',
+        '殘鋒冷意仍在指尖，提醒你：績效表可以撕，收屍問題不能撕。',
+      ],
+      choices: {
+        bx3_swear: {
+          outcomeText: '約寫進你的現代備忘錄置頂。拔劍前先讀一句——很土，很有效。',
+          rewardsPatch: { potential: 3, inspiration: 2 },
+        },
+        bx3_write: {
+          outcomeText: '第三版小冊被當教材。你只收茶錢與一句「別拿去害人」。',
+          rewardsPatch: { silver: 20, inspiration: 3 },
+        },
+        bx3_wander: {
+          outcomeText: '歸途更熟，心卻更輕。你把這夜標成「可重複的正確」。',
+          rewardsPatch: { staminaDelta: 4, inspiration: 3 },
+        },
+      },
+    },
+  },
 }
 
 /** 高頻奇遇：NG+ 結果／標籤差分（加深池體感） */

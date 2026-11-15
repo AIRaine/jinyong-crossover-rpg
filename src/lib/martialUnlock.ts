@@ -61,7 +61,8 @@ export const LOCATION_MARTIAL_FINDS: Record<string, string[]> = {
   loc_xiake_isle: ['ma_qing_wave', 'ma_qing_wharf', 'ma_qing_swallow'],
   loc_dali: ['ma_act_liumei', 'ma_qing_lingbo'],
   loc_suhang: ['ma_heart_tianji', 'ma_act_liumei'],
-  loc_tianji_hall: ['ma_heart_tianji', 'ma_heart_azhu'],
+  loc_tianji_hall: ['ma_heart_tianji', 'ma_heart_azhu', 'ma_heart_liancheng'],
+  loc_snow_ridge: ['ma_qing_snow', 'ma_qing_yanmen', 'ma_act_blood_sword'],
 }
 
 /** 戰鬥勝利可能掉落的招式（非開局那五招） */
@@ -78,6 +79,9 @@ export const COMBAT_MARTIAL_POOL = [
   'ma_qing_wharf',
   'ma_heart_wine',
   'ma_act_taiji_sword',
+  'ma_qing_snow',
+  'ma_heart_liancheng',
+  'ma_act_blood_sword',
 ] as const
 
 export function grantMartialArts(
