@@ -333,7 +333,7 @@ export const MAIN_STORY_EVENTS: StoryEventDef[] = [
   },
 ]
 
-/** 奇遇 ≥ 20 */
+/** 奇遇池（含遠方導流；NG+ 另併差分池） */
 export const ENCOUNTER_EVENTS: StoryEventDef[] = [
   {
     id: 'enc_tea',
@@ -961,6 +961,114 @@ export const ENCOUNTER_EVENTS: StoryEventDef[] = [
       },
     ],
   },
+  {
+    id: 'enc_lingjiu_tea',
+    year: 0,
+    title: '奇遇｜靈鷲雲茶',
+    summary: '雲開一瞬，虛築邀你對坐飲茶——暮容復也在。',
+    locationId: 'loc_lingjiu',
+    paragraphs: [
+      '峯頂風薄。虛築笑得憨：「喝茶。」暮容復盯著杯沿，像在審核茶葉 KPI。',
+    ],
+    choices: [
+      {
+        id: 'enc_ling_tea_sit',
+        label: '安靜喝完，請教半式身法',
+        hint: '輕功｜遠方',
+        outcomeText:
+          '茶淡，身法不淡。虛築比了半式「凌波」足跡，暮容復冷哼卻沒阻止。',
+        rewards: {
+          inspiration: 3,
+          potential: 2,
+          martialIds: ['ma_qing_lingbo'],
+          affinity: { npc_xu_zhu: 8, npc_murong_fu: 2 },
+        },
+      },
+      {
+        id: 'enc_ling_tea_ask',
+        label: '順便打聽下山捷徑',
+        hint: '導流',
+        outcomeText:
+          '虛築指了指雲縫：「碼頭轉峩眉也行。」你把捷徑記進現代備忘錄——沒訊號也能用腦。',
+        rewards: {
+          inspiration: 4,
+          flags: { travelHintFar: 1 },
+          affinity: { npc_xu_zhu: 5 },
+        },
+      },
+    ],
+  },
+  {
+    id: 'enc_tomb_night_bell',
+    year: 0,
+    title: '奇遇｜暮門夜鈴',
+    summary: '活死人暮外鈴響三聲，宵朧女立於石階。',
+    locationId: 'loc_dead_tomb',
+    paragraphs: [
+      '鈴不是招魂，是拒絕閒人。你站得夠遠，她才開口：「何事？」',
+    ],
+    choices: [
+      {
+        id: 'enc_tomb_bell_learn',
+        label: '請教封石口訣半句',
+        hint: '武學',
+        outcomeText:
+          '她只授半句。半句卻夠你少踩兩處機關。揚過遠處置刀，沒有反對。',
+        rewards: {
+          potential: 3,
+          martialIds: ['ma_gumupo_jade'],
+          affinity: { npc_xiaolongnu: 6 },
+        },
+      },
+      {
+        id: 'enc_tomb_bell_leave',
+        label: '獻上乾糧後告退',
+        hint: '好感',
+        outcomeText: '乾糧被收下。鈴不再響。你下山時少迷一路。',
+        rewards: {
+          silver: -8,
+          staminaDelta: 4,
+          affinity: { npc_xiaolongnu: 4, npc_yang_guo: 2 },
+        },
+      },
+    ],
+  },
+  {
+    id: 'enc_emei_cloud_ladder',
+    year: 0,
+    title: '奇遇｜峩眉雲梯試膽',
+    summary: '滅訣師太讓外門弟子爬雲梯——你被當成臨時陪練。',
+    locationId: 'loc_emei_gate',
+    paragraphs: [
+      '雲梯晃，門規更晃。週芷若低聲：「別喧譁。」你回：「我連呼吸都調小了。」',
+    ],
+    choices: [
+      {
+        id: 'enc_emei_ladder_climb',
+        label: '穩爬雲梯，示範節奏',
+        hint: '潛能｜劍意',
+        outcomeText:
+          '你以現代核心肌群穩定法上梯。滅訣師太沒誇，只丟一式峩眉劍意殘招。',
+        rewards: {
+          potential: 4,
+          martialIds: ['ma_act_emei_sword'],
+          affinity: { npc_zhou_zhiruo: 5 },
+        },
+      },
+      {
+        id: 'enc_emei_ladder_spot',
+        label: '在下方保護師妹們',
+        hint: '俠義向',
+        outcomeText:
+          '無人摔倒。滅訣師太點頭半寸——半寸已是表揚。你精力略耗，名聲略升。',
+        rewards: {
+          staminaDelta: -6,
+          exp: 18,
+          affinity: { npc_mie_jue: 4, npc_zhou_zhiruo: 4 },
+        },
+      },
+    ],
+  },
 ]
 
 export const RUMOR_POOL: string[] = [
@@ -1028,6 +1136,13 @@ export function pickEncounter(
   ]
 
   const weights = pool.map((e) => {
+    // NG+ 專屬奇遇提高曝光，降低「重播同一池」體感
+    if (e.id.startsWith('enc_ng_')) {
+      let w = 5
+      if (here && e.locationId === here) w = 8
+      if (here && e.locationId && cold.has(e.locationId)) w += 2
+      return w
+    }
     if (!e.locationId) return 2
     const isCold = cold.has(e.locationId)
     const isHot = hot.has(e.locationId)

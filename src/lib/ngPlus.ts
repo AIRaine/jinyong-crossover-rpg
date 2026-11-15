@@ -1,9 +1,10 @@
 import { createInitialGameState } from '../data/initialState'
+import { detectEndingKey } from './ngPlusStory'
 import type { GameState } from '../types/game'
 
 /**
  * 多周目結算：保留元寶、月卡餘額、外觀、抽卡保底慣例重置、NG+ 次數與部分永久加值。
- * 劇情／地圖／裝備進度重置。
+ * 劇情／地圖／裝備進度重置；保留上周目結局標籤供序章／奇遇差分。
  */
 export function applyNewGamePlus(prev: GameState): GameState {
   const fresh = createInitialGameState()
@@ -14,6 +15,7 @@ export function applyNewGamePlus(prev: GameState): GameState {
   const keepCosmetics = [...prev.cosmetics]
   const keepSpar = prev.sparWins
   const keepGachaTotal = prev.gachaTotalPulls
+  const lastEnding = detectEndingKey(prev.flags)
 
   return {
     ...fresh,
@@ -52,6 +54,7 @@ export function applyNewGamePlus(prev: GameState): GameState {
     flags: {
       ...fresh.flags,
       ngPlusFrom: prev.ngPlusCount + 1,
+      ...(lastEnding ? { lastEnding } : {}),
     },
   }
 }

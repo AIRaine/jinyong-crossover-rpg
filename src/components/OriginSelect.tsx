@@ -74,7 +74,7 @@ export function OriginSelect({ onSelect, ngPlusGuide }: OriginSelectProps) {
         </h1>
         {ngPlusGuide && step === 'pick' && (
           <p className="mt-2 rounded-lg bg-amber-950/50 px-3 py-2 text-xs leading-relaxed text-amber-100 ring-1 ring-amber-700/35">
-            周目已結算：元寶與外觀已保留。請重新選擇開局大類與職稱，才能進入新序章。
+            周目已結算：元寶、外觀與結局迴聲已保留。請重新選擇開局大類與職稱——新序章與主線文案會依周目差分，不會原樣重播。
           </p>
         )}
         <p className="mt-1 text-xs leading-relaxed text-paper/55">

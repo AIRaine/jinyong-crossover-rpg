@@ -4,7 +4,6 @@ import {
   getUnfinishedMainForYear,
   XUN_LABELS,
 } from '../../data/events'
-import { getPrologueEvent } from '../../data/prologue'
 import {
   getLocationById,
   LOCATION_KIND_LABEL,
@@ -18,6 +17,7 @@ import type {
   GameState,
   LocationDef,
   StoryChoice,
+  StoryEvent,
   StoryEventChoiceDef,
   StoryEventDef,
 } from '../../types/game'
@@ -27,6 +27,8 @@ interface TravelTabProps {
   statusMsg: string | null
   linkedLocations: LocationDef[]
   pendingEvent: StoryEventDef | null
+  /** NG+ 差分後的序章（由 useGame 提供） */
+  prologueEvent: StoryEvent
   onChoose: (choice: StoryChoice) => void
   onTravel: (locationId: string) => void
   onGather: (kind: 'herb' | 'ore') => void
@@ -42,6 +44,7 @@ export function TravelTab({
   statusMsg,
   linkedLocations,
   pendingEvent,
+  prologueEvent,
   onChoose,
   onTravel,
   onGather,
@@ -51,11 +54,11 @@ export function TravelTab({
   onFight,
   onUsePill,
 }: TravelTabProps) {
-  const prologue = getPrologueEvent()
+  const prologue = prologueEvent
   const showPrologue =
     state.originChosen &&
     !state.prologueDone &&
-    state.activeEventId === prologue.id
+    state.activeEventId === 'event_prologue_rain_temple'
 
   if (!state.originChosen) {
     return (

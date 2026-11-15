@@ -44,6 +44,7 @@ export default function App() {
               statusMsg={game.statusMsg}
               linkedLocations={game.linkedLocations}
               pendingEvent={game.pendingEvent}
+              prologueEvent={game.prologueEvent}
               onChoose={game.choosePrologue}
               onTravel={game.travelTo}
               onGather={game.gatherAtLocation}
