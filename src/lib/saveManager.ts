@@ -329,6 +329,46 @@ export function migrateSaveData(raw: unknown): GameState {
     }
   }
 
+  // v9 → v10：故事弧／日登／週目標（數週節奏骨架）
+  if (version < 10) {
+    if (typeof migrated.routeSeed !== 'number' || migrated.routeSeed < 1) {
+      migrated.routeSeed =
+        (Date.now() % 900000) +
+        (migrated.ngPlusCount ?? 0) * 97 +
+        11
+    }
+    if (!Array.isArray(migrated.unlockedArcIds)) migrated.unlockedArcIds = []
+    if (!Array.isArray(migrated.completedBeatIds)) {
+      migrated.completedBeatIds = []
+    }
+    if (typeof migrated.xunsSinceLastBeat !== 'number') {
+      migrated.xunsSinceLastBeat = 4
+    }
+    if (!migrated.daily || typeof migrated.daily !== 'object') {
+      migrated.daily = { lastClaimDate: '', streak: 0 }
+    } else {
+      migrated.daily = {
+        lastClaimDate:
+          typeof migrated.daily.lastClaimDate === 'string'
+            ? migrated.daily.lastClaimDate
+            : '',
+        streak:
+          typeof migrated.daily.streak === 'number' ? migrated.daily.streak : 0,
+      }
+    }
+    if (!migrated.weekly || typeof migrated.weekly !== 'object') {
+      migrated.weekly = { weekKey: '', goals: [] }
+    } else if (!Array.isArray(migrated.weekly.goals)) {
+      migrated.weekly = {
+        weekKey:
+          typeof migrated.weekly.weekKey === 'string'
+            ? migrated.weekly.weekKey
+            : '',
+        goals: [],
+      }
+    }
+  }
+
   migrated.version = SAVE_VERSION
   return migrated
 }

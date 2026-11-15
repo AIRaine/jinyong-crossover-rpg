@@ -1,4 +1,5 @@
 import { NPCS } from './npcs'
+import { buildWeeklyGoals, calendarWeekKey, STORY_BEAT_COOLDOWN_XUN } from './storyArcs'
 import { SAVE_VERSION, type GameState } from '../types/game'
 
 export function createInitialGameState(): GameState {
@@ -148,5 +149,18 @@ export function createInitialGameState(): GameState {
     travelPassCharges: 0,
     paidAtkBonus: 0,
     paidDefBonus: 0,
+    routeSeed: 0,
+    unlockedArcIds: [],
+    completedBeatIds: [],
+    /** 開局即可掛第一個節拍；了結後歸零再冷卻 */
+    xunsSinceLastBeat: STORY_BEAT_COOLDOWN_XUN,
+    daily: {
+      lastClaimDate: '',
+      streak: 0,
+    },
+    weekly: {
+      weekKey: calendarWeekKey(),
+      goals: buildWeeklyGoals(calendarWeekKey()),
+    },
   }
 }
