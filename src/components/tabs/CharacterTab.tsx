@@ -165,10 +165,9 @@ export function CharacterTab({
                     onClick={() => onRefine(owned.uid)}
                     className="touch-btn rounded-lg bg-amber-900/50 py-2 text-[11px] text-amber-100"
                   >
-                    精煉
                     {owned.refineLevel < 15
-                      ? ` ${refineCostForLevel(def.baseRefineCost, owned.refineLevel)}銀`
-                      : ' MAX'}
+                      ? `精煉（${refineCostForLevel(def.baseRefineCost, owned.refineLevel)} 銀兩）`
+                      : '精煉 MAX'}
                   </button>
                   <button
                     type="button"

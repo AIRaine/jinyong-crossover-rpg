@@ -63,14 +63,14 @@ export function OriginSelect({ onSelect, ngPlusGuide }: OriginSelectProps) {
     <div className="absolute inset-0 z-50 flex flex-col bg-ink-950">
       <div className="shrink-0 border-b border-cinnabar/30 px-4 pb-3 pt-[max(0.75rem,env(safe-area-inset-top))] text-center">
         <p className="text-[11px] tracking-[0.2em] text-cinnabar-soft">
-          {ngPlusGuide ? 'NG+ 新周目' : '開局'}
+          {ngPlusGuide ? '輪迴新周' : '穿越初醒'}
         </p>
         <h1 className="font-display text-xl text-paper">
-          {step === 'pick' && '你來自哪一大類？'}
-          {step === 'job' && '具體做什麼？'}
-          {step === 'identity' && '你想被怎麼稱呼？'}
-          {step === 'transit' && '異變發生了'}
-          {step === 'confirm' && '墜入襄揚之前'}
+          {step === 'pick' && '敢問出身門道？'}
+          {step === 'job' && '今生業緣何在？'}
+          {step === 'identity' && '江湖如何稱你？'}
+          {step === 'transit' && '時空裂隙已開'}
+          {step === 'confirm' && '墜入襄揚雨夜之前'}
         </h1>
         {ngPlusGuide && step === 'pick' && (
           <p className="mt-2 rounded-lg bg-amber-950/50 px-3 py-2 text-xs leading-relaxed text-amber-100 ring-1 ring-amber-700/35">
@@ -81,7 +81,7 @@ export function OriginSelect({ onSelect, ngPlusGuide }: OriginSelectProps) {
           {step === 'pick' &&
             '約十個大類決定天賦；八大與無業也在其中。可捲動展開。'}
           {step === 'job' &&
-            '自填職稱可空白——空白則用大類預設名。'}
+            '寫你在現代的工作或身分即可；空白則用大類預設名。'}
           {step === 'identity' && '性別與暱稱可之後再改。'}
           {step === 'transit' && '請慢慢讀完，再進破廟。'}
           {step === 'confirm' && '確認後寫入存檔，序章開始。'}
@@ -109,12 +109,12 @@ export function OriginSelect({ onSelect, ngPlusGuide }: OriginSelectProps) {
       {step === 'job' && origin && (
         <div className="flex flex-1 flex-col overflow-y-auto px-4 py-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
           <p className="text-sm text-paper/80">
-            大類：
+            出身門道：
             <span className="font-display text-paper"> {origin.name}</span>
           </p>
           <p className="mt-1 text-xs text-paper/50">{origin.summary}</p>
           <label className="mt-4 block text-xs text-paper/55">
-            具體工作／身分（可空白）
+            敢問今生所操何業？（可空白）
           </label>
           <input
             type="text"
@@ -125,7 +125,7 @@ export function OriginSelect({ onSelect, ngPlusGuide }: OriginSelectProps) {
             className="touch-btn mt-1 w-full rounded-xl border border-paper/15 bg-ink-900 px-3 py-3 text-sm text-paper outline-none focus:border-cinnabar/50"
           />
           <p className="mt-2 text-[11px] text-paper/40">
-            預覽顯示：{jobDisplay}
+            名帖預覽：{jobDisplay}
           </p>
           <div className="mt-auto flex gap-2 pt-6">
             <button
@@ -193,7 +193,7 @@ export function OriginSelect({ onSelect, ngPlusGuide }: OriginSelectProps) {
               }}
               className="touch-btn flex-[1.4] rounded-xl bg-cinnabar/90 py-3 text-sm text-paper"
             >
-              進入異變
+              踏入裂隙
             </button>
           </div>
         </div>
@@ -246,7 +246,7 @@ export function OriginSelect({ onSelect, ngPlusGuide }: OriginSelectProps) {
               你將以「{jobDisplay}·{displayName}」身份墜入襄揚雨夜破廟。
             </p>
             <p className="mt-2 text-xs text-paper/55">
-              大類 {origin.name}｜性別 {PLAYER_GENDER_LABEL[gender]}
+              出身 {origin.name}｜性別 {PLAYER_GENDER_LABEL[gender]}
             </p>
           </div>
           <div className="mt-3 space-y-2 rounded-xl border border-paper/10 bg-ink-900/70 p-3 text-xs leading-relaxed text-paper/70">
@@ -353,15 +353,15 @@ function OriginCard({
       {expanded && (
         <div className="space-y-2 border-t border-paper/10 px-4 py-3 text-xs leading-relaxed text-paper/65">
           <p>
-            <span className="text-paper/40">原型　</span>
+            <span className="text-paper/40">來歷　</span>
             {origin.bio}
           </p>
           <p>
-            <span className="text-paper/40">天賦　</span>
+            <span className="text-paper/40">機緣　</span>
             {origin.passiveText}
           </p>
           <p>
-            <span className="text-paper/40">初始　</span>
+            <span className="text-paper/40">隨身　</span>
             {origin.startingItemBlurb}
           </p>
           <button
@@ -369,7 +369,7 @@ function OriginCard({
             onClick={onChoose}
             className="touch-btn mt-1 w-full rounded-lg bg-cinnabar/90 py-3 text-sm text-paper"
           >
-            選擇「{origin.name}」
+            認此出身「{origin.name}」
           </button>
         </div>
       )}
@@ -380,7 +380,7 @@ function OriginCard({
             onClick={onChoose}
             className="touch-btn w-full rounded-lg bg-paper/10 py-2.5 text-xs text-paper/85"
           >
-            選擇此大類
+            認此門道
           </button>
         </div>
       )}

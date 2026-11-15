@@ -132,18 +132,24 @@ export function TravelTab({
             {statusMsg}
           </p>
         )}
-        <div className="mt-3 grid grid-cols-2 gap-2">
-          <button
-            type="button"
-            onClick={onAdvanceXun}
-            className="touch-btn rounded-xl bg-cinnabar/90 py-3 text-sm text-paper"
-          >
-            推進一旬（2 AP）
-          </button>
+        <div className="mt-3 space-y-2">
+          <div className="rounded-xl border border-sky-700/35 bg-sky-950/35 px-3 py-2.5">
+            <button
+              type="button"
+              onClick={onAdvanceXun}
+              className="touch-btn w-full rounded-lg bg-sky-800/85 py-3 text-sm text-sky-50"
+            >
+              推進一旬（2 AP）
+            </button>
+            <p className="mt-2 text-[11px] leading-relaxed text-sky-100/75">
+              旬＝約十天時間推進。消耗 2 AP，不耗精力；推進後回復 3
+              AP（不超過上限）。可能觸發旬內事件／主線，並結算商道進帳。與下方採集不同：採集是就地取物資。
+            </p>
+          </div>
           <button
             type="button"
             onClick={onFight}
-            className="touch-btn rounded-xl bg-rose-900/60 py-3 text-sm text-rose-50"
+            className="touch-btn w-full rounded-xl bg-rose-900/60 py-3 text-sm text-rose-50"
           >
             路遇戰鬥 3v3
           </button>
@@ -214,8 +220,11 @@ export function TravelTab({
         current?.gather === 'both') && (
         <div className="space-y-2">
           <h3 className="font-display text-sm text-paper/80">
-            採集（1 AP｜目前 {state.actionPoints}/{state.maxActionPoints}）
+            採集物資（1 AP｜目前 {state.actionPoints}/{state.maxActionPoints}）
           </h3>
+          <p className="text-[11px] leading-relaxed text-paper/45">
+            就地採一次，耗 1 AP、不耗精力；與上方「推進一旬」無關。
+          </p>
           <div className="grid grid-cols-2 gap-2">
             {(current.gather === 'herb' || current.gather === 'both') && (
               <button
@@ -223,7 +232,7 @@ export function TravelTab({
                 onClick={() => onGather('herb')}
                 className="touch-btn rounded-xl border border-emerald-700/40 bg-emerald-950/40 py-3 text-sm text-emerald-100"
               >
-                採草藥
+                採草藥（1 AP）
               </button>
             )}
             {(current.gather === 'ore' || current.gather === 'both') && (
@@ -232,7 +241,7 @@ export function TravelTab({
                 onClick={() => onGather('ore')}
                 className="touch-btn rounded-xl border border-stone-500/40 bg-stone-900/50 py-3 text-sm text-stone-100"
               >
-                採礦石
+                採礦石（1 AP）
               </button>
             )}
           </div>
@@ -261,7 +270,7 @@ export function TravelTab({
             onClick={() => onUsePill(MATERIAL_IDS.hpPill)}
             className="touch-btn rounded-xl bg-paper/10 py-2.5 text-xs text-paper disabled:opacity-35"
           >
-            服回血丹（{hpPill?.quantity ?? 0}）
+            服回血丹（庫存 {hpPill?.quantity ?? 0} 顆）
           </button>
           <button
             type="button"
@@ -269,7 +278,7 @@ export function TravelTab({
             onClick={() => onUsePill(MATERIAL_IDS.qiPill)}
             className="touch-btn rounded-xl bg-paper/10 py-2.5 text-xs text-paper disabled:opacity-35"
           >
-            服回內丹（{qiPill?.quantity ?? 0}）
+            服回內丹（庫存 {qiPill?.quantity ?? 0} 顆）
           </button>
         </div>
       </div>

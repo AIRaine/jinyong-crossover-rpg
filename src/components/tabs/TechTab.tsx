@@ -123,8 +123,8 @@ export function TechTab({ state, onUnlock, onTrain, onSetSlot }: TechTabProps) {
                           : lv <= 0
                             ? `學習（${cost} 潛能）`
                             : bottleneck
-                              ? `衝擊第 ${next} 重（${cost}）`
-                              : `修練第 ${next} 重（${cost}）`}
+                              ? `衝擊第 ${next} 重（${cost} 潛能）`
+                              : `修練第 ${next} 重（${cost} 潛能）`}
                       </button>
                       {lv > 0 && (
                         <ConfigButton
@@ -192,8 +192,8 @@ export function TechTab({ state, onUnlock, onTrain, onSetSlot }: TechTabProps) {
                         {!prereqMet
                           ? '前置未解鎖'
                           : canAfford
-                            ? '消耗靈感解鎖'
-                            : `靈感不足（差 ${node.inspirationCost - state.inspiration}）`}
+                            ? `消耗 ${node.inspirationCost} 靈感解鎖`
+                            : `靈感不足（差 ${node.inspirationCost - state.inspiration} 靈感）`}
                       </button>
                     )}
                   </article>
