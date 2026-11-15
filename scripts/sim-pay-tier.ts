@@ -114,12 +114,39 @@ type Counters = {
   travelPassUses: number
 }
 
+/** 真人每步秒數假設（用於通關分鐘估算） */
+const SEC_PER_STEP = {
+  /** 快手連點／掃讀 */
+  fast: 8,
+  /** 一般閱讀＋點選（主報表用） */
+  normal: 15,
+  /** 慢讀劇情／戰鬥猶豫 */
+  slow: 25,
+} as const
+
+/** 加權秒數：肝／便利點選短、決策長 */
+const WEIGHTED_SEC = {
+  grind: 5,
+  skip: 4,
+  decision: 18,
+  other: 4,
+} as const
+
+type OpsSnapshot = {
+  grind: number
+  skip: number
+  decision: number
+  other: number
+}
+
 type RunResult = {
   tier: PayTier
   seed: number
   steps: number
   cyclesCompleted: number
   cycleSteps: number[]
+  /** 一週目通關當下的操作組成（含開局購物） */
+  opsToC1: OpsSnapshot | null
   combatWinRate: number | null
   grind: number
   skip: number
@@ -922,6 +949,24 @@ function mainYearKey(year: 1 | 2 | 3 | 4 | 5): string {
   )[year]
 }
 
+function snapshotOps(c: Counters): OpsSnapshot {
+  return {
+    grind: c.grind,
+    skip: c.skip,
+    decision: c.decision,
+    other: c.other,
+  }
+}
+
+function weightedSeconds(ops: OpsSnapshot): number {
+  return (
+    ops.grind * WEIGHTED_SEC.grind +
+    ops.skip * WEIGHTED_SEC.skip +
+    ops.decision * WEIGHTED_SEC.decision +
+    ops.other * WEIGHTED_SEC.other
+  )
+}
+
 function runOne(tier: PayTier, seed: number): RunResult {
   const rng = mulberry32(seed)
   const c = emptyCounters()
@@ -931,6 +976,7 @@ function runOne(tier: PayTier, seed: number): RunResult {
   const cycleSteps: number[] = []
   let cyclesCompleted = 0
   let cycleStart = 0
+  let opsToC1: OpsSnapshot | null = null
 
   try {
     // 開局前載入預算內便利（避免購物步數排擠主線造成「課金更慢」假象）
@@ -956,6 +1002,7 @@ function runOne(tier: PayTier, seed: number): RunResult {
         bump(c, 'decision')
         cycleSteps.push(steps - cycleStart)
         cyclesCompleted++
+        if (cyclesCompleted === 1) opsToC1 = snapshotOps(c)
         if (cyclesCompleted >= 3) break
         state = applyNewGamePlus(state)
         cycleStart = steps
@@ -1002,6 +1049,7 @@ function runOne(tier: PayTier, seed: number): RunResult {
     steps,
     cyclesCompleted,
     cycleSteps,
+    opsToC1,
     combatWinRate: fights ? Math.round((c.combatWins / fights) * 1000) / 10 : null,
     grind: c.grind,
     skip: c.skip,
@@ -1136,6 +1184,52 @@ function median(nums: number[]): number | null {
   return s.length % 2 ? s[m] : Math.round(((s[m - 1] + s[m]) / 2) * 10) / 10
 }
 
+function minutesFromSeconds(sec: number | null): number | null {
+  if (sec == null) return null
+  return Math.round((sec / 60) * 10) / 10
+}
+
+function summarizeClearTime(c1: RunResult[]) {
+  const stepVals = c1.map((r) => r.cycleSteps[0]).filter((n): n is number => n > 0)
+  const stepMed = median(stepVals)
+  const stepAvg = avg(stepVals)
+  const opsList = c1.map((r) => r.opsToC1).filter((o): o is OpsSnapshot => !!o)
+  const grindAvg = avg(opsList.map((o) => o.grind))
+  const skipAvg = avg(opsList.map((o) => o.skip))
+  const decisionAvg = avg(opsList.map((o) => o.decision))
+  const otherAvg = avg(opsList.map((o) => o.other))
+  const weightedSecList = opsList.map(weightedSeconds)
+  const weightedSecMed = median(weightedSecList)
+  const weightedSecAvg = avg(weightedSecList)
+  const flat = (secPer: number) => ({
+    medianMin: stepMed == null ? null : minutesFromSeconds(stepMed * secPer),
+    avgMin: stepAvg == null ? null : minutesFromSeconds(stepAvg * secPer),
+  })
+  return {
+    steps: { median: stepMed, avg: stepAvg },
+    opsToC1Avg: {
+      grind: grindAvg,
+      skip: skipAvg,
+      decision: decisionAvg,
+      other: otherAvg,
+    },
+    /** 均一秒／步 → 分鐘 */
+    flatSecPerStep: {
+      fast_8s: flat(SEC_PER_STEP.fast),
+      normal_15s: flat(SEC_PER_STEP.normal),
+      slow_25s: flat(SEC_PER_STEP.slow),
+    },
+    /** 依操作類型加權秒數 → 分鐘 */
+    weighted: {
+      secAssumptions: WEIGHTED_SEC,
+      medianSec: weightedSecMed,
+      avgSec: weightedSecAvg,
+      medianMin: minutesFromSeconds(weightedSecMed),
+      avgMin: minutesFromSeconds(weightedSecAvg),
+    },
+  }
+}
+
 function summarize(runs: RunResult[]) {
   const byTier: Record<string, unknown> = {}
   for (const tier of Object.keys(TIER_BUDGET) as PayTier[]) {
@@ -1164,6 +1258,7 @@ function summarize(runs: RunResult[]) {
         median: median(c3.map((r) => r.cycleSteps[2]).filter(Boolean)),
         avg: avg(c3.map((r) => r.cycleSteps[2]).filter(Boolean)),
       },
+      clearTime: summarizeClearTime(c1),
       combatWinRateAvg: avg(
         rs.map((r) => r.combatWinRate).filter((x): x is number => x != null),
       ),
@@ -1329,6 +1424,20 @@ function main() {
   const verdict =
     fail > 0 ? 'imbalanced_fail' : warn > 0 ? 'imbalanced_warn' : 'balanced'
 
+  const clearTimeSummary: Record<string, unknown> = {}
+  for (const tier of tiers) {
+    const t = byTier[tier] as Record<string, any>
+    clearTimeSummary[tier] = {
+      stepsMedian: t.clearTime?.steps?.median ?? null,
+      stepsAvg: t.clearTime?.steps?.avg ?? null,
+      normalMinMedian: t.clearTime?.flatSecPerStep?.normal_15s?.medianMin ?? null,
+      normalMinAvg: t.clearTime?.flatSecPerStep?.normal_15s?.avgMin ?? null,
+      weightedMinMedian: t.clearTime?.weighted?.medianMin ?? null,
+      weightedMinAvg: t.clearTime?.weighted?.avgMin ?? null,
+      opsToC1Avg: t.clearTime?.opsToC1Avg ?? null,
+    }
+  }
+
   const out = {
     meta: {
       date: new Date().toISOString(),
@@ -1338,11 +1447,14 @@ function main() {
       style: '主線衝關＋適度探索（四檔相同）',
       originId: ORIGIN_ID,
       budgets: TIER_BUDGET,
+      secPerStepAssumptions: SEC_PER_STEP,
+      weightedSecAssumptions: WEIGHTED_SEC,
       note:
-        '便利跳過肝比例 = (skip−月卡領取)/(grind+該便利跳過)；決策占比 = decision/全部操作。月卡例行領取另列 monthlyClaims。',
+        '便利跳過肝比例 = (skip−月卡領取)/(grind+該便利跳過)；決策占比 = decision/全部操作。月卡例行領取另列 monthlyClaims。通關時長：一週目 stepsToC1；一般報表用 15 秒／步；加權＝肝5／跳過4／決策18／其他4 秒。',
     },
     verdict,
     findings,
+    clearTimeSummary,
     byTier,
     scripted,
   }
@@ -1352,7 +1464,9 @@ function main() {
     { recursive: true },
   )
   writeFileSync(OUT_JSON, JSON.stringify(out, null, 2))
-  console.log(JSON.stringify({ verdict, findings, byTier, scripted }, null, 2))
+  console.log(
+    JSON.stringify({ verdict, findings, clearTimeSummary, byTier, scripted }, null, 2),
+  )
   console.log(`\nWrote ${OUT_JSON}`)
 }
 
