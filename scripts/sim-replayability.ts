@@ -342,23 +342,24 @@ function weightsFor(persona: Persona): OpWeights {
 
 function maxStepsFor(persona: Persona, rng: () => number): number {
   const noise = Math.floor(rng() * 40)
+  // 階段 C：節拍冷卻 5＋結局閘 12，主軸步數上修；休閒仍偏短以暴露節奏風險
   switch (persona.playStyle) {
     case '主線衝關':
-      return 320 + noise
+      return 420 + noise
     case '戰鬥肝':
-      return 280 + noise
+      return 340 + noise
     case '探索收集':
-      return 300 + noise
+      return 360 + noise
     case '養成煉丹':
-      return 260 + noise
+      return 320 + noise
     case '社交門派':
-      return 260 + noise
+      return 320 + noise
     case '抽卡課金':
-      return 300 + noise
+      return 360 + noise
     case '純免費':
-      return 240 + noise
+      return 320 + noise
     case '休閒隨緣':
-      return 180 + noise
+      return 220 + noise
   }
 }
 
@@ -644,8 +645,8 @@ function stepAdvanceXun(state: GameState, rng: () => number): GameState | null {
     xun = 0
     month += 1
     if (month > 12) {
+      // 月份循環；故事年僅由軟進年推進
       month = 1
-      year += 1
     }
   }
   const tradeSilver = 5 + routed.tradeRouteLevel * 8
@@ -1129,6 +1130,8 @@ function runOne(
     }
   }
 
+  let lastBeatCount = 0
+
   const trackStoryProgress = () => {
     const cur = perCycleMainYears[perCycleMainYears.length - 1]
     let progressed = false
@@ -1139,6 +1142,13 @@ function runOne(
         progressed = true
         lastMainProgressStep = steps
       }
+    }
+    // 弧節拍也算主軸進度（階段 C 結局閘依賴節拍數，勿誤判停滯）
+    const beatCount = state.completedBeatIds.length
+    if (beatCount > lastBeatCount) {
+      lastBeatCount = beatCount
+      progressed = true
+      lastMainProgressStep = steps
     }
     if (progressed) stagnantMainSteps = 0
 
@@ -1166,10 +1176,12 @@ function runOne(
     const opNames = Object.keys(w)
 
     while (steps < maxSteps) {
-      // 優先消化待辦事件（主線衝關／一般體驗）
+      // 優先消化待辦事件（UI 會置頂事態；衝關幾乎必點，其餘高機率點）
       const preferEvent =
         !!state.pendingEventId &&
-        (persona.playStyle === '主線衝關' || rng() < 0.55)
+        (persona.playStyle === '主線衝關' ||
+          persona.playStyle === '純免費' ||
+          rng() < 0.82)
 
       const op = preferEvent
         ? 'event'
@@ -1340,6 +1352,7 @@ function runOne(
           perCycleMainYears.push({ mainYearSteps: {} })
           lastMainProgressStep = steps
           stagnantMainSteps = 0
+          lastBeatCount = state.completedBeatIds.length
         }
       }
 

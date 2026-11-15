@@ -436,8 +436,8 @@ function stepAdvanceXun(state: GameState, rng: () => number, c: Counters): GameS
     xun = 0
     month += 1
     if (month > 12) {
+      // 月份循環；故事年僅由軟進年推進
       month = 1
-      year += 1
     }
   }
   const tradeSilver = 5 + routed.tradeRouteLevel * 8

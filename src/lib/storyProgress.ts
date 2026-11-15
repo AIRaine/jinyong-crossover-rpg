@@ -6,7 +6,9 @@ import {
   allArcEventIds,
   beatMetaForEvent,
   bumpWeeklyGoal,
+  countCompletedBeats,
   ensureWeeklyGoals,
+  FINALE_MIN_BEATS,
   getNextStoryEventId,
   refreshUnlockedArcs,
   rollStarterArcs,
@@ -19,6 +21,28 @@ import {
   pickRumors,
 } from '../data/events'
 import type { GameState, GameTime } from '../types/game'
+
+/** 結局閘：東海潮信不可經「當年未了結主線」後門掛上 */
+export function canScheduleFinale(state: GameState): boolean {
+  if (state.unlockedArcIds.includes('arc_tide_ending')) return true
+  return countCompletedBeats(state) >= FINALE_MIN_BEATS
+}
+
+/**
+ * 推旬掛載後備：取「最早尚未了結」的主線年事件。
+ * 避免日曆／軟進年已到較高年份時，跳過未了結的較早主線；結局另受 FINALE_MIN_BEATS 約束。
+ */
+export function pickFallbackMainEventId(state: GameState): string | undefined {
+  for (const y of [1, 2, 3, 4, 5] as const) {
+    const main = getMainEventForYear(y)
+    if (!main || state.storyFlags[main.id]) continue
+    if (main.id === 'main_y5_wharf' && !canScheduleFinale(state)) {
+      return undefined
+    }
+    return main.id
+  }
+  return undefined
+}
 
 export function ensureStoryRoute(state: GameState): GameState {
   let next = ensureWeeklyGoals(state)
@@ -149,13 +173,14 @@ export function resolveAdvanceXunStory(
   })
 
   let nextPending = pendingEventId
+  const routedForPick: GameState = {
+    ...routed,
+    unlockedArcIds,
+    xunsSinceLastBeat,
+    time: { year, month, day, period, xun },
+  }
   const nextEvent =
-    getNextStoryEventId({
-      ...routed,
-      unlockedArcIds,
-      xunsSinceLastBeat,
-      time: { year, month, day, period, xun },
-    }) ?? getUnfinishedMainForYear(year, storyFlags)?.id
+    getNextStoryEventId(routedForPick) ?? pickFallbackMainEventId(routedForPick)
 
   if (nextEvent && !nextPending) {
     // 冷卻未滿時 getNext 可能仍回傳「同年未了結」；允許掛上
