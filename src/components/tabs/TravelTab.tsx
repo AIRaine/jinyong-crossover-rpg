@@ -9,6 +9,11 @@ import {
   getLocationById,
   LOCATION_KIND_LABEL,
 } from '../../data/locations'
+import {
+  BANDIT_FIGHT_AP_COST,
+  BANDIT_FIGHTS_PER_XUN_MAX,
+  getBanditStartBlock,
+} from '../../lib/banditEncounterRules'
 import type {
   GameState,
   LocationDef,
@@ -110,8 +115,17 @@ export function TravelTab({
     ? getLocationById(unfinishedMain.locationId)
     : null
   const guideTips = farTravelHints(state.knownLocationIds)
-  const fightLocked =
-    state.combatLoseStreak >= 3 || state.stats.hp <= state.stats.maxHp * 0.35
+  const fightBlock = getBanditStartBlock(state)
+  const fightLocked = fightBlock !== null
+  const fightButtonLabel = (() => {
+    if (fightBlock === 'low_hp' || fightBlock === 'lose_streak') return '需先養傷'
+    if (fightBlock === 'no_ap') return `AP 不足（需 ${BANDIT_FIGHT_AP_COST} AP）`
+    if (fightBlock === 'xun_cap') {
+      return `本旬已滿（${BANDIT_FIGHTS_PER_XUN_MAX} 場）`
+    }
+    if (fightBlock === 'prologue') return '序章未了'
+    return `路遇（${BANDIT_FIGHT_AP_COST} AP）`
+  })()
 
   return (
     <section className="space-y-4 text-left">
@@ -142,11 +156,17 @@ export function TravelTab({
           <p className="mt-3 rounded-lg bg-rose-950/45 px-3 py-2 text-xs leading-relaxed text-rose-100 ring-1 ring-rose-700/40">
             連敗 {state.combatLoseStreak} 場
             {state.combatLoseStreak >= 2
-              ? '：下一場路遇敵人會較弱；建議先服丹或換地養傷。'
+              ? '：下一場路遇敵人會較弱；建議先服丹、遠行或推進旬制養傷。'
               : '：注意氣血，可先休整再戰。'}
-            {state.combatLoseStreak >= 3 ? '路遇已暫時鎖定。' : ''}
+            {state.combatLoseStreak >= 3
+              ? '路遇已暫時鎖定（服丹／遠行／推進旬可解鎖）。'
+              : ''}
           </p>
         )}
+        <p className="mt-3 text-[11px] text-paper/45">
+          本旬路遇 {state.banditFightsThisXun}/{BANDIT_FIGHTS_PER_XUN_MAX} 場（每場{' '}
+          {BANDIT_FIGHT_AP_COST} AP；第 3 場起獎減半）
+        </p>
         {statusMsg && (
           <p className="mt-3 rounded-lg bg-teal-950/50 px-3 py-2 text-xs text-teal-100 ring-1 ring-teal-700/40">
             {statusMsg}
@@ -169,9 +189,14 @@ export function TravelTab({
             type="button"
             onClick={onFight}
             disabled={fightLocked}
-            className="touch-btn rounded-xl bg-rose-900/60 py-3 text-sm text-rose-50 disabled:opacity-40"
+            className="touch-btn rounded-xl bg-rose-900/60 px-2 py-2.5 text-sm leading-snug text-rose-50 disabled:opacity-40"
           >
-            {fightLocked ? '需先養傷' : '路遇戰鬥 3v3'}
+            <span className="block">{fightButtonLabel}</span>
+            {!fightLocked && (
+              <span className="mt-0.5 block text-[10px] font-normal text-rose-50/85">
+                3v3 · 本旬 {state.banditFightsThisXun}/{BANDIT_FIGHTS_PER_XUN_MAX}
+              </span>
+            )}
           </button>
         </div>
       </div>

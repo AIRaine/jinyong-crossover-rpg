@@ -146,6 +146,10 @@ export function migrateSaveData(raw: unknown): GameState {
       typeof data.combatLoseStreak === 'number'
         ? data.combatLoseStreak
         : base.combatLoseStreak,
+    banditFightsThisXun:
+      typeof data.banditFightsThisXun === 'number'
+        ? data.banditFightsThisXun
+        : base.banditFightsThisXun,
     travelPassCharges:
       typeof data.travelPassCharges === 'number'
         ? data.travelPassCharges
@@ -305,6 +309,13 @@ export function migrateSaveData(raw: unknown): GameState {
     }
     if (typeof migrated.paidAtkBonus !== 'number') migrated.paidAtkBonus = 0
     if (typeof migrated.paidDefBonus !== 'number') migrated.paidDefBonus = 0
+  }
+
+  // v7 → v8：路遇同旬次數（防無成本刷）
+  if (version < 8) {
+    if (typeof migrated.banditFightsThisXun !== 'number') {
+      migrated.banditFightsThisXun = 0
+    }
   }
 
   migrated.version = SAVE_VERSION

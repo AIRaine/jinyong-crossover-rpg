@@ -36,6 +36,11 @@ import { NPCS, createItemFromCatalog } from '../src/data/npcs.ts'
 import { applyRewards } from '../src/lib/applyRewards.ts'
 import { grantStarterGear } from '../src/lib/starterGear.ts'
 import {
+  applyBanditFightStartCost,
+  banditWinRewards,
+  getBanditStartBlock,
+} from '../src/lib/banditEncounterRules.ts'
+import {
   makeBanditEncounter,
   makeSparEncounter,
   performPlayerAction,
@@ -489,6 +494,9 @@ function applyCombatRewards(state: GameState, combat: CombatState, spar: boolean
         martialProgress = grantMartialArts(state, [mid]).state.martialProgress
       }
     }
+    const reward = spar
+      ? { silver: 12, potential: 3 }
+      : banditWinRewards(state.banditFightsThisXun)
     return {
       ...state,
       martialProgress,
@@ -499,9 +507,9 @@ function applyCombatRewards(state: GameState, combat: CombatState, spar: boolean
       },
       currency: {
         ...state.currency,
-        silver: state.currency.silver + (spar ? 12 : 20),
+        silver: state.currency.silver + reward.silver,
       },
-      potential: state.potential + (spar ? 3 : 2),
+      potential: state.potential + reward.potential,
       sparWins: state.sparWins + (spar ? 1 : 0),
     }
   }
@@ -670,6 +678,8 @@ function stepAdvanceXun(state: GameState, rng: () => number): GameState | null {
     rumors: pickRumors(year * 100 + month * 10 + xun, 3),
     pendingEventId,
     storyFlags,
+    combatLoseStreak: 0,
+    banditFightsThisXun: 0,
   }
 }
 
@@ -1225,13 +1235,18 @@ function runOne(
           }
         }
       } else if (op === 'combat_bandit') {
-        if (
-          state.combatLoseStreak >= 3 ||
-          state.stats.hp <= state.stats.maxHp * 0.35
-        ) {
-          // 連敗／低血保護：改養傷
+        const block = getBanditStartBlock(state)
+        if (block) {
+          // 連敗／低血／AP／旬上限：改養傷或推進旬節奏
           state = {
             ...state,
+            combatLoseStreak: block === 'lose_streak' ? 0 : state.combatLoseStreak,
+            banditFightsThisXun:
+              block === 'xun_cap' ? 0 : state.banditFightsThisXun,
+            actionPoints:
+              block === 'no_ap'
+                ? Math.min(state.maxActionPoints, state.actionPoints + 1)
+                : state.actionPoints,
             stats: {
               ...state.stats,
               hp: Math.min(
@@ -1246,6 +1261,7 @@ function runOne(
           }
           continue
         }
+        state = applyBanditFightStartCost(state)
         const enc = makeBanditEncounter(
           buildPlayerCombatant(state),
           buildPartyCombatants(state),

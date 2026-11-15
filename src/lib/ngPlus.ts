@@ -44,6 +44,7 @@ export function applyNewGamePlus(prev: GameState): GameState {
     inspiration: 6 + prev.ngPlusCount * 2,
     potential: 8,
     combatLoseStreak: 0,
+    banditFightsThisXun: 0,
     travelPassCharges: prev.travelPassCharges,
     paidAtkBonus: prev.paidAtkBonus,
     paidDefBonus: prev.paidDefBonus,

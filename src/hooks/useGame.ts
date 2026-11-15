@@ -50,6 +50,14 @@ import {
 } from '../data/shop'
 import { applyRewards } from '../lib/applyRewards'
 import {
+  applyBanditFightStartCost,
+  BANDIT_FIGHT_AP_COST,
+  BANDIT_FIGHTS_PER_XUN_MAX,
+  banditWinRewards,
+  clearCombatLoseStreak,
+  getBanditStartBlock,
+} from '../lib/banditEncounterRules'
+import {
   buildPartyCombatants,
   buildPlayerCombatant,
 } from '../lib/buildCombatants'
@@ -374,32 +382,36 @@ export function useGame() {
         }
       }
 
+      const cleared =
+        state.combatLoseStreak > 0 ? clearCombatLoseStreak(state) : state
       const next: GameState = {
-        ...state,
+        ...cleared,
         locationId: target.id,
         locationName: target.name,
         knownLocationIds: [...known],
         martialProgress,
         travelPassCharges: usePass
-          ? Math.max(0, state.travelPassCharges - 1)
-          : state.travelPassCharges,
+          ? Math.max(0, cleared.travelPassCharges - 1)
+          : cleared.travelPassCharges,
         stats: {
-          ...state.stats,
-          stamina: state.stats.stamina - cost,
+          ...cleared.stats,
+          stamina: cleared.stats.stamina - cost,
         },
         time: {
-          ...state.time,
+          ...cleared.time,
           period: nextPeriod,
           day: nextDay,
         },
-        actionPoints: restoreAp ? state.maxActionPoints : state.actionPoints,
+        actionPoints: restoreAp ? cleared.maxActionPoints : cleared.actionPoints,
         lastOutcomeText: null,
         lastCombatResult: null,
       }
       persist(next)
       playSound('page')
+      const streakNote =
+        state.combatLoseStreak > 0 ? '｜連敗保護已解除' : ''
       showToast(
-        `抵達「${target.name}」，消耗精力 ${cost}${usePass ? '（通票減半）' : ''}${restoreAp ? '；AP 已回復' : ''}${martialNote}`,
+        `抵達「${target.name}」，消耗精力 ${cost}${usePass ? '（通票減半）' : ''}${restoreAp ? '；AP 已回復' : ''}${martialNote}${streakNote}`,
       )
       setStatusMsg(`你來到${target.region}的${target.name}。`)
     },
@@ -817,16 +829,21 @@ export function useGame() {
           showToast('沒有回血丹')
           return
         }
+        const cleared = clearCombatLoseStreak(state)
         persist({
-          ...state,
+          ...cleared,
           inventory: inv,
           stats: {
-            ...state.stats,
-            hp: Math.min(state.stats.maxHp, state.stats.hp + 40),
+            ...cleared.stats,
+            hp: Math.min(cleared.stats.maxHp, cleared.stats.hp + 40),
           },
         })
         playSound('success')
-        showToast('服用回血丹，氣血 +40')
+        showToast(
+          state.combatLoseStreak > 0
+            ? '服用回血丹，氣血 +40｜連敗保護已解除'
+            : '服用回血丹，氣血 +40',
+        )
         return
       }
       if (itemId === MATERIAL_IDS.qiPill) {
@@ -836,19 +853,24 @@ export function useGame() {
           showToast('沒有回內丹')
           return
         }
+        const cleared = clearCombatLoseStreak(state)
         persist({
-          ...state,
+          ...cleared,
           inventory: inv,
           stats: {
-            ...state.stats,
+            ...cleared.stats,
             internalForce: Math.min(
-              state.stats.maxInternalForce,
-              state.stats.internalForce + 30,
+              cleared.stats.maxInternalForce,
+              cleared.stats.internalForce + 30,
             ),
           },
         })
         playSound('success')
-        showToast('服用回內丹，內力 +30')
+        showToast(
+          state.combatLoseStreak > 0
+            ? '服用回內丹，內力 +30｜連敗保護已解除'
+            : '服用回內丹，內力 +30',
+        )
       }
     },
     [ensureAudio, persist, showToast, state],
@@ -1194,34 +1216,49 @@ export function useGame() {
 
   const startBanditFight = useCallback(async () => {
     await ensureAudio()
-    if (!state.prologueDone) {
-      showToast('序章未了')
-      return
-    }
-    if (state.stats.hp <= state.stats.maxHp * 0.35) {
+    const block = getBanditStartBlock(state)
+    if (block) {
       playSound('fail')
-      showToast('氣血過低，先服丹或採集養傷，再上路遇')
-      setStatusMsg('戰敗疲勞提示：氣血不足三成五時不宜硬打。')
+      if (block === 'prologue') {
+        showToast('序章未了')
+      } else if (block === 'low_hp') {
+        showToast('氣血過低，先服丹或採集養傷，再上路遇')
+        setStatusMsg('戰敗疲勞提示：氣血不足三成五時不宜硬打。')
+      } else if (block === 'lose_streak') {
+        showToast('連敗三次，先推進旬制、服丹或遠行再戰')
+        setStatusMsg('連敗保護：請先休整（旬制／丹藥／遠行），再挑戰路遇。')
+      } else if (block === 'no_ap') {
+        showToast(
+          `行動點不足（需 ${BANDIT_FIGHT_AP_COST} AP，目前 ${state.actionPoints} AP）`,
+        )
+        setStatusMsg('路遇需消耗行動點；可推進一旬回復 AP（上限內）。')
+      } else {
+        showToast(
+          `本旬路遇已達上限（${BANDIT_FIGHTS_PER_XUN_MAX} 場），請推進一旬後再戰`,
+        )
+        setStatusMsg(
+          `同旬路遇上限 ${BANDIT_FIGHTS_PER_XUN_MAX} 場；推進旬制可重置次數。`,
+        )
+      }
       return
     }
-    if (state.combatLoseStreak >= 3) {
-      playSound('fail')
-      showToast('連敗三次，先推進旬制或遊歷養傷再戰')
-      setStatusMsg('連敗保護：請先休整（旬制／丹藥／遠行），再挑戰路遇。')
-      return
-    }
+    const paid = applyBanditFightStartCost(state)
+    persist(paid)
     playSound('combat')
     setCombatKind('bandit')
     const encounter = makeBanditEncounter(
-      buildPlayerCombatant(state),
-      buildPartyCombatants(state),
+      buildPlayerCombatant(paid),
+      buildPartyCombatants(paid),
       {
-        loseStreak: state.combatLoseStreak,
-        year: state.time.year,
+        loseStreak: paid.combatLoseStreak,
+        year: paid.time.year,
       },
     )
     setCombat(encounter)
-  }, [ensureAudio, showToast, state])
+    setStatusMsg(
+      `路遇開戰（-${BANDIT_FIGHT_AP_COST} AP｜本旬 ${paid.banditFightsThisXun}/${BANDIT_FIGHTS_PER_XUN_MAX}）`,
+    )
+  }, [ensureAudio, persist, showToast, state])
 
   const combatAct = useCallback(
     (action: CombatActionKind, targetId?: string) => {
@@ -1234,8 +1271,11 @@ export function useGame() {
         if (next.victory) {
           const player = next.allies.find((a) => a.isPlayer)
           const hp = player?.hp ?? state.stats.hp
-          const silverGain = isSpar ? 12 : 20
-          const potGain = isSpar ? 3 : 2
+          const banditReward = isSpar
+            ? { silver: 12, potential: 3, decayed: false }
+            : banditWinRewards(state.banditFightsThisXun)
+          const silverGain = banditReward.silver
+          const potGain = banditReward.potential
           let martialProgress = state.martialProgress
           let martialNote = ''
           if (!isSpar && Math.random() < 0.28) {
@@ -1247,6 +1287,8 @@ export function useGame() {
               if (art) martialNote = `、武學「${art.name}」`
             }
           }
+          const decayNote =
+            !isSpar && banditReward.decayed ? '（本旬獎勵已衰減）' : ''
           persist({
             ...state,
             martialProgress,
@@ -1266,13 +1308,13 @@ export function useGame() {
               summary: isSpar ? '切磋勝利。' : '三對三戰局勝利。',
               rewardsNote: isSpar
                 ? `銀兩 +${silverGain}、潛能 +${potGain}、切磋勝場 +1`
-                : `銀兩 +${silverGain}、潛能 +${potGain}${martialNote}`,
+                : `銀兩 +${silverGain}、潛能 +${potGain}${martialNote}${decayNote}`,
             },
           })
           showToast(
             isSpar
               ? `切磋勝利：銀兩 +${silverGain}、潛能 +${potGain}`
-              : `戰鬥勝利：銀兩 +${silverGain}、潛能 +${potGain}${martialNote}`,
+              : `戰鬥勝利：銀兩 +${silverGain}、潛能 +${potGain}${martialNote}${decayNote}`,
           )
         } else {
           const streak = state.combatLoseStreak + 1
@@ -1586,6 +1628,7 @@ export function useGame() {
     const apNote =
       apAfter > apBefore ? 'AP +1（上限內）' : 'AP 已滿則不增'
 
+    const streakCleared = state.combatLoseStreak > 0
     persist({
       ...state,
       actionPoints: apAfter,
@@ -1598,13 +1641,16 @@ export function useGame() {
       pendingEventId,
       storyFlags,
       lastOutcomeText: null,
+      combatLoseStreak: 0,
+      banditFightsThisXun: 0,
     })
     playSound('page')
     const mainHint = unfinishedMain
       ? `｜主線待決：${unfinishedMain.title}`
       : ''
+    const restNote = streakCleared ? '｜連敗保護已解除' : ''
     showToast(
-      `${accelNote ? `${accelNote} ` : ''}推進一旬（${apNote}）｜進入${year}年${month}月${XUN_LABELS[xun]}｜商道進帳 ${tradeSilver} 銀兩${mainHint}`,
+      `${accelNote ? `${accelNote} ` : ''}推進一旬（${apNote}）｜進入${year}年${month}月${XUN_LABELS[xun]}｜商道進帳 ${tradeSilver} 銀兩｜路遇次數重置${restNote}${mainHint}`,
     )
     setStatusMsg(
       unfinishedMain && pendingEventId === unfinishedMain.id
