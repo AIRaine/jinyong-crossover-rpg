@@ -12,6 +12,7 @@ import { getPrologueEvent } from '../src/data/prologue.ts'
 import {
   ENCOUNTER_EVENTS,
   MAIN_STORY_EVENTS,
+  getStoryEventById,
 } from '../src/data/events.ts'
 import {
   applyMainBeatResolved,
@@ -679,9 +680,7 @@ function stepResolveEvent(
   const eventId = state.pendingEventId
   if (!eventId) return { state }
   const raw =
-    MAIN_STORY_EVENTS.find((e) => e.id === eventId) ??
-    ENCOUNTER_EVENTS.find((e) => e.id === eventId) ??
-    NG_PLUS_ENCOUNTERS.find((e) => e.id === eventId)
+    getStoryEventById(eventId)
   if (!raw || !raw.choices.length) {
     return { state: { ...state, pendingEventId: null }, eventId }
   }
@@ -703,13 +702,7 @@ function stepResolveEvent(
     }
   }
   const storyFlags = { ...flagged.storyFlags, [eventId]: true }
-  const mainDone = [
-    'main_y1_xiangyang',
-    'main_y2_huashan',
-    'main_y3_tomb',
-    'main_y4_xuanmu',
-    'main_y5_wharf',
-  ].every((k) => storyFlags[k])
+  const mainDone = Boolean(storyFlags['main_y5_wharf'])
   const baseNext: GameState = {
     ...flagged,
     pendingEventId: null,
@@ -718,7 +711,7 @@ function stepResolveEvent(
     tradeRouteLevel: flagged.tradeRouteLevel + (choice.tradeBump ?? 0),
     ngPlusReady: flagged.ngPlusReady || mainDone,
   }
-  let next: GameState = eventId.startsWith('main_')
+  let next: GameState = eventId.startsWith('main_') || eventId.startsWith('arc_')
     ? applyMainBeatResolved(baseNext, eventId)
     : ensureStoryRoute(baseNext)
   if (choice.startCombat) {

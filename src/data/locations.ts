@@ -211,9 +211,22 @@ export const LOCATIONS: LocationDef[] = [
       'loc_icefire_isle',
       'loc_broken_temple',
       'loc_lingjiu',
+      'loc_xiake_isle',
     ],
     travelStamina: 6,
     npcIds: ['npc_wei_xiaobao', 'npc_shuang_er', 'npc_huang_rong'],
+    gather: 'both',
+  },
+  {
+    id: 'loc_xiake_isle',
+    name: '俠客氣島',
+    kind: 'secret',
+    region: '東海島鏈',
+    description:
+      '潮起潮落之間，石壁刻字半隱半現。據說讀懂的人會笑，讀不懂的人會先學會游泳。',
+    links: ['loc_east_wharf', 'loc_peach_island', 'loc_icefire_isle'],
+    travelStamina: 9,
+    npcIds: ['npc_shi_potian', 'npc_wei_xiaobao'],
     gather: 'both',
   },
   {

@@ -424,6 +424,17 @@ export const NPCS: NpcDef[] = [
     favoriteGifts: ['gift_ink_notes', 'gift_tea_brick', 'gift_blueprint'],
     startingAffinity: 0,
   },
+  {
+    id: 'npc_shi_potian',
+    name: '石破添',
+    title: '俠客氣島邊數浪的憨直少年',
+    role: 'tank',
+    homeLocationId: 'loc_xiake_isle',
+    bio: '識字不多，記浪很勤。你若願意陪他讀石壁，他會把潮履的走法講得很仔細。',
+    romanceable: false,
+    favoriteGifts: ['gift_protein_bar', 'gift_peach_pastry', 'gift_tea_brick'],
+    startingAffinity: 5,
+  },
 ]
 
 export function getNpcById(id: string): NpcDef | undefined {

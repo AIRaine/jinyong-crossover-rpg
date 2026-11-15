@@ -61,13 +61,6 @@ export function applyNewGamePlus(prev: GameState): GameState {
 
 export function canSettleNgPlus(state: GameState): boolean {
   if (state.ngPlusReady) return true
-  // 五年主線皆完成
-  const keys = [
-    'main_y1_xiangyang',
-    'main_y2_huashan',
-    'main_y3_tomb',
-    'main_y4_xuanmu',
-    'main_y5_wharf',
-  ]
-  return keys.every((k) => state.storyFlags[k])
+  // 結局節拍（東海潮信）了結即可；解鎖條件見故事弧 FINALE_MIN_BEATS
+  return Boolean(state.storyFlags.main_y5_wharf)
 }

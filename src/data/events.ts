@@ -1,3 +1,4 @@
+import { ARC_BEAT_EVENTS } from './arcBeats'
 import { NG_PLUS_ENCOUNTERS } from '../lib/ngPlusStory'
 import type { StoryEventDef } from '../types/game'
 
@@ -15,6 +16,7 @@ export const COLD_LOCATION_IDS = [
   'loc_huashan',
   'loc_emei_gate',
   'loc_icefire_isle',
+  'loc_xiake_isle',
 ] as const
 
 /** 旬名 */
@@ -1178,6 +1180,9 @@ export function farTravelHints(knownLocationIds: string[]): string[] {
   if (!knownLocationIds.includes('loc_icefire_isle')) {
     tips.push('傳聞：冰火島影獅吼再起，碼頭可轉——敢泡溫泉者或有輕功體悟。')
   }
+  if (!knownLocationIds.includes('loc_xiake_isle')) {
+    tips.push('傳聞：俠客氣島石壁夜半露字，自東海碼頭乘潮可探；潮履或有感應。')
+  }
   return tips.slice(0, 2)
 }
 
@@ -1190,4 +1195,14 @@ export function getUnfinishedMainForYear(
   if (!main) return undefined
   if (storyFlags[main.id]) return undefined
   return main
+}
+
+/** 查找主線／弧節拍／奇遇定義 */
+export function getStoryEventById(id: string): StoryEventDef | undefined {
+  return (
+    MAIN_STORY_EVENTS.find((e) => e.id === id) ??
+    ARC_BEAT_EVENTS.find((e) => e.id === id) ??
+    ENCOUNTER_EVENTS.find((e) => e.id === id) ??
+    NG_PLUS_ENCOUNTERS.find((e) => e.id === id)
+  )
 }

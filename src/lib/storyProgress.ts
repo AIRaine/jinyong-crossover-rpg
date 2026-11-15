@@ -3,6 +3,7 @@
  * 階段 A：取消「了結即傳奇加速跨年」，改旬冷卻後軟進年。
  */
 import {
+  allArcEventIds,
   beatMetaForEvent,
   bumpWeeklyGoal,
   ensureWeeklyGoals,
@@ -18,14 +19,6 @@ import {
   pickRumors,
 } from '../data/events'
 import type { GameState, GameTime } from '../types/game'
-
-const MAIN_KEYS = [
-  'main_y1_xiangyang',
-  'main_y2_huashan',
-  'main_y3_tomb',
-  'main_y4_xuanmu',
-  'main_y5_wharf',
-] as const
 
 export function ensureStoryRoute(state: GameState): GameState {
   let next = ensureWeeklyGoals(state)
@@ -45,9 +38,9 @@ export function ensureStoryRoute(state: GameState): GameState {
     routeSeed,
     unlockedArcIds,
   })
-  // 遷移：已寫入 storyFlags 的主線視為節拍完成
+  // 遷移：已寫入 storyFlags 的弧／主線事件視為節拍完成
   let completedBeatIds = [...next.completedBeatIds]
-  for (const key of MAIN_KEYS) {
+  for (const key of allArcEventIds()) {
     if (!next.storyFlags[key]) continue
     const meta = beatMetaForEvent(key)
     if (meta && !completedBeatIds.includes(meta.beatId)) {
@@ -68,8 +61,9 @@ export function ensureStoryRoute(state: GameState): GameState {
   }
 }
 
+/** 結局閘：東海潮信了結即可結算 NG+（前置靠弧節拍數解鎖） */
 export function allMainBeatsDone(storyFlags: Record<string, boolean>): boolean {
-  return MAIN_KEYS.every((k) => storyFlags[k])
+  return Boolean(storyFlags.main_y5_wharf)
 }
 
 /** 了結主線節拍後：不瞬跳年份；重置冷卻並記節拍 */
@@ -95,7 +89,7 @@ export function applyMainBeatResolved(
     }),
   }
 
-  if (eventId.startsWith('main_y')) {
+  if (eventId.startsWith('main_') || eventId.startsWith('arc_')) {
     next = bumpWeeklyGoal(next, 'complete_beat', 1)
   }
   return next

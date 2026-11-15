@@ -117,9 +117,11 @@ export function TravelTab({
   const hpPill = state.inventory.find((i) => i.id === MATERIAL_IDS.hpPill)
   const qiPill = state.inventory.find((i) => i.id === MATERIAL_IDS.qiPill)
   const arcRows = listActiveArcSummaries(routed)
-  const pendingArc = pendingEvent?.id?.startsWith('main_')
-    ? pendingEvent
-    : null
+  const pendingArc =
+    pendingEvent?.id?.startsWith('main_') ||
+    pendingEvent?.id?.startsWith('arc_')
+      ? pendingEvent
+      : null
   const mainLoc = pendingArc?.locationId
     ? getLocationById(pendingArc.locationId)
     : null
