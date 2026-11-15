@@ -59,6 +59,9 @@ function FighterCard({
 
 export function CombatModal({ combat, onAct, onClose }: CombatModalProps) {
   const livingEnemies = combat.enemies.filter((e) => e.hp > 0)
+  const player = combat.allies.find((a) => a.isPlayer) ?? combat.allies[0]
+  const playerDown = !player || player.hp <= 0
+  const actionsLocked = combat.finished || playerDown
   const [selected, setSelected] = useState<string | undefined>(
     livingEnemies[0]?.id,
   )
@@ -70,6 +73,9 @@ export function CombatModal({ combat, onAct, onClose }: CombatModalProps) {
       <div className="shrink-0 border-b border-cinnabar/30 px-3 py-3 text-center">
         <p className="text-[11px] tracking-[0.2em] text-cinnabar-soft">三對三戰局</p>
         <h2 className="font-display text-lg text-paper">第 {combat.turn} 回合</h2>
+        {playerDown && !combat.finished && (
+          <p className="mt-1 text-xs text-rose-200">你已無法作戰——請結束此戰。</p>
+        )}
       </div>
 
       <div className="grid flex-1 grid-cols-2 gap-2 overflow-y-auto px-3 py-3">
@@ -109,10 +115,14 @@ export function CombatModal({ combat, onAct, onClose }: CombatModalProps) {
         ))}
       </div>
 
-      {combat.finished ? (
+      {actionsLocked ? (
         <div className="shrink-0 space-y-2 border-t border-paper/10 px-3 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
           <p className="text-center text-sm text-paper">
-            {combat.victory ? '勝利！' : '敗北……'}
+            {combat.finished
+              ? combat.victory
+                ? '勝利！'
+                : '敗北……'
+              : '你已倒下，無法再操作。'}
           </p>
           <button
             type="button"

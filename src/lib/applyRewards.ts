@@ -109,8 +109,19 @@ export function applyRewards(
   }
   if (rewards.affinity) {
     for (const [npcId, delta] of Object.entries(rewards.affinity)) {
-      next.affinity[npcId] = (next.affinity[npcId] ?? 0) + delta
-      messages.push(`好感（${npcId === 'npc_huang_rong' ? '皇容' : npcId}）+${delta}`)
+      const before = next.affinity[npcId] ?? 0
+      const after = clamp(before + delta, 0, 100)
+      next.affinity[npcId] = after
+      const applied = after - before
+      if (applied !== 0) {
+        messages.push(
+          `好感（${npcId === 'npc_huang_rong' ? '皇容' : npcId}）${applied > 0 ? '+' : ''}${applied}`,
+        )
+      } else if (delta !== 0) {
+        messages.push(
+          `好感（${npcId === 'npc_huang_rong' ? '皇容' : npcId}）已達界限`,
+        )
+      }
     }
   }
   if (rewards.flags) {

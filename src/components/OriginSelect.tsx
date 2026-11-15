@@ -15,6 +15,8 @@ export interface OriginSelectPayload {
 
 interface OriginSelectProps {
   onSelect: (payload: OriginSelectPayload) => void
+  /** NG+ 結算後強制重選時顯示導引 */
+  ngPlusGuide?: boolean
 }
 
 type Step = 'pick' | 'job' | 'identity' | 'transit' | 'confirm'
@@ -24,7 +26,7 @@ const SHARED_LANDING = [
   '你還不是江湖人。你只是一個剛從現代日程裡被抽離的人。',
 ]
 
-export function OriginSelect({ onSelect }: OriginSelectProps) {
+export function OriginSelect({ onSelect, ngPlusGuide }: OriginSelectProps) {
   const [step, setStep] = useState<Step>('pick')
   const [expandedId, setExpandedId] = useState<string | null>(null)
   const [pickedId, setPickedId] = useState<string | null>(null)
@@ -60,7 +62,9 @@ export function OriginSelect({ onSelect }: OriginSelectProps) {
   return (
     <div className="absolute inset-0 z-50 flex flex-col bg-ink-950">
       <div className="shrink-0 border-b border-cinnabar/30 px-4 pb-3 pt-[max(0.75rem,env(safe-area-inset-top))] text-center">
-        <p className="text-[11px] tracking-[0.2em] text-cinnabar-soft">開局</p>
+        <p className="text-[11px] tracking-[0.2em] text-cinnabar-soft">
+          {ngPlusGuide ? 'NG+ 新周目' : '開局'}
+        </p>
         <h1 className="font-display text-xl text-paper">
           {step === 'pick' && '你來自哪一大類？'}
           {step === 'job' && '具體做什麼？'}
@@ -68,6 +72,11 @@ export function OriginSelect({ onSelect }: OriginSelectProps) {
           {step === 'transit' && '異變發生了'}
           {step === 'confirm' && '墜入襄揚之前'}
         </h1>
+        {ngPlusGuide && step === 'pick' && (
+          <p className="mt-2 rounded-lg bg-amber-950/50 px-3 py-2 text-xs leading-relaxed text-amber-100 ring-1 ring-amber-700/35">
+            周目已結算：元寶與外觀已保留。請重新選擇開局大類與職稱，才能進入新序章。
+          </p>
+        )}
         <p className="mt-1 text-xs leading-relaxed text-paper/55">
           {step === 'pick' &&
             '約十個大類決定天賦；八大與無業也在其中。可捲動展開。'}

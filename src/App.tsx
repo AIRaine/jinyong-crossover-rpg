@@ -16,6 +16,7 @@ import { useGame } from './hooks/useGame'
 export default function App() {
   const game = useGame()
   const showOrigin = !game.state.originChosen
+  const ngPlusGuide = Boolean(game.state.flags.ngPlusNeedsOrigin)
 
   return (
     <div className="app-root flex min-h-dvh justify-center bg-stage px-0 sm:px-4 sm:py-4">
@@ -126,6 +127,7 @@ export default function App() {
 
         {showOrigin && (
           <OriginSelect
+            ngPlusGuide={ngPlusGuide}
             onSelect={(payload) => {
               void game.selectOrigin(payload)
             }}

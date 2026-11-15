@@ -21,6 +21,7 @@ import {
   MAIN_STORY_EVENTS,
   XUN_LABELS,
   getMainEventForYear,
+  getUnfinishedMainForYear,
   pickEncounter,
   pickRumors,
 } from '../data/events'
@@ -235,6 +236,7 @@ export function useGame() {
           originName: displayJob,
           originCategory: origin.name,
           openingTransitDone: true,
+          ngPlusNeedsOrigin: false,
         },
       }
       persist(next)
@@ -1022,14 +1024,21 @@ export function useGame() {
       return
     }
     const next = applyNewGamePlus(state)
-    persist(next)
+    // originChosen 已由 fresh 重設為 false → App 會強制導引開局大類
+    persist({
+      ...next,
+      flags: {
+        ...next.flags,
+        ngPlusNeedsOrigin: true,
+      },
+    })
     setLastGacha([])
     setCombat(null)
     setCombatKind(null)
     playSound('success')
-    showToast(`已開啟第 ${next.ngPlusCount} 周目（NG+）`)
+    showToast(`第 ${next.ngPlusCount} 周目：請重新選擇開局大類與職稱`)
     setTab('travel')
-    setStatusMsg('新周目開始：元寶與外觀已保留。')
+    setStatusMsg('NG+ 已結算。請先完成開局大類選擇，再進入序章。')
   }, [ensureAudio, persist, showToast, state])
 
   const manualSave = useCallback(
@@ -1366,14 +1375,33 @@ export function useGame() {
     const tradeSilver = 5 + state.tradeRouteLevel * 8
     const rumors = pickRumors(year * 100 + month * 10 + xun, 3)
 
-    // 主線：該年尚未完成則掛上
-    const main = getMainEventForYear(year)
-    let pendingEventId = state.pendingEventId
+    // 傳奇加速：當年主線已完成且未滿五年 → 推進到下一年
+    let accelNote: string | null = null
     const storyFlags = { ...state.storyFlags }
-    if (main && !storyFlags[main.id] && !pendingEventId) {
-      pendingEventId = main.id
+    const yearMain = getMainEventForYear(year)
+    if (
+      year < 5 &&
+      yearMain &&
+      storyFlags[yearMain.id] &&
+      !getUnfinishedMainForYear(year, storyFlags)
+    ) {
+      year += 1
+      month = 1
+      xun = 0
+      day = Math.max(day, (year - 1) * 360 + 1)
+      accelNote = `傳奇加速：歲月倏忽，已至${year}年。`
+    }
+
+    // 主線：該年尚未完成則優先掛上（覆蓋空檔；並提高提醒）
+    const unfinishedMain = getUnfinishedMainForYear(year, storyFlags)
+    let pendingEventId = state.pendingEventId
+    if (unfinishedMain && !pendingEventId) {
+      pendingEventId = unfinishedMain.id
     } else if (!pendingEventId && Math.random() < 0.45) {
-      const enc = pickEncounter(year * 30 + month * 3 + xun)
+      const enc = pickEncounter(
+        year * 30 + month * 3 + xun,
+        state.knownLocationIds,
+      )
       pendingEventId = enc.id
     }
 
@@ -1394,13 +1422,20 @@ export function useGame() {
       lastOutcomeText: null,
     })
     playSound('page')
+    const mainHint = unfinishedMain
+      ? `｜主線待決：${unfinishedMain.title}`
+      : ''
     showToast(
-      `進入${year}年${month}月${XUN_LABELS[xun]}｜商道進帳 ${tradeSilver} 銀兩`,
+      `${accelNote ? `${accelNote} ` : ''}進入${year}年${month}月${XUN_LABELS[xun]}｜商道進帳 ${tradeSilver} 銀兩${mainHint}`,
     )
     setStatusMsg(
-      pendingEventId
-        ? '旬內有事發生，請查看下方事件。'
-        : '旬日平穩，傳聞已更新。',
+      unfinishedMain && pendingEventId === unfinishedMain.id
+        ? `當年主線已降臨：${unfinishedMain.title}。請於下方選擇。`
+        : unfinishedMain
+          ? `提醒：${unfinishedMain.title} 尚未了結。`
+          : pendingEventId
+            ? '旬內有事發生，請查看下方事件。'
+            : '旬日平穩，傳聞已更新。',
     )
   }, [ensureAudio, persist, showToast, state])
 
@@ -1423,8 +1458,27 @@ export function useGame() {
         'main_y4_xuanmu',
         'main_y5_wharf',
       ].every((k) => storyFlags[k])
+
+      // 主線了結後傳奇加速：立刻跨入下一年（五年結局除外）
+      let time = { ...rewarded.time }
+      let accelMsg = ''
+      if (
+        eventId.startsWith('main_y') &&
+        !eventId.startsWith('main_y5') &&
+        time.year < 5
+      ) {
+        time = {
+          ...time,
+          year: Math.min(5, time.year + 1),
+          month: 1,
+          xun: 0,
+        }
+        accelMsg = `｜傳奇加速至${time.year}年`
+      }
+
       let next: GameState = {
         ...rewarded,
+        time,
         pendingEventId: null,
         storyFlags,
         lastOutcomeText: choice.outcomeText,
@@ -1435,7 +1489,9 @@ export function useGame() {
 
       if (choice.startCombat) {
         persist(next)
-        showToast(messages.join(' · ') || '事件了結，戰局開打')
+        showToast(
+          `${messages.join(' · ') || '事件了結，戰局開打'}${accelMsg}`,
+        )
         setCombatKind('bandit')
         const encounter = makeBanditEncounter(
           buildPlayerCombatant(next),
@@ -1451,8 +1507,16 @@ export function useGame() {
       showToast(
         mainDone && eventId.startsWith('main_y5')
           ? `${messages.join(' · ') || '事件了結'}｜五年主線畢，可至系統結算 NG+`
-          : messages.join(' · ') || '事件了結',
+          : `${messages.join(' · ') || '事件了結'}${accelMsg}`,
       )
+      if (accelMsg) {
+        const nextMain = getUnfinishedMainForYear(time.year, storyFlags)
+        setStatusMsg(
+          nextMain
+            ? `已進入${time.year}年。下一段主線：${nextMain.title}（推進旬制可觸發）。`
+            : `已進入${time.year}年。`,
+        )
+      }
     },
     [ensureAudio, persist, showToast, state],
   )

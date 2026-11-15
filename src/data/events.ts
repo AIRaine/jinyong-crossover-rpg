@@ -903,10 +903,40 @@ export function pickRumors(seed: number, count = 3): string[] {
 }
 
 export function getMainEventForYear(year: number): StoryEventDef | undefined {
-  return MAIN_STORY_EVENTS.find((e) => e.year === year)
+  // 五年之後仍可回顧第五年主線定義（供提醒用）；觸發以 year 1–5 為準
+  const y = Math.min(Math.max(1, year), 5)
+  return MAIN_STORY_EVENTS.find((e) => e.year === y)
 }
 
-export function pickEncounter(seed: number): StoryEventDef {
-  const idx = Math.abs(seed) % ENCOUNTER_EVENTS.length
-  return ENCOUNTER_EVENTS[idx]
+/**
+ * 依已知地點加權抽奇遇：無地點限制權重 3；已知對應地點 5；未走過的地點綁定 1。
+ * 減少「永遠抽到同一無門檻池／永遠抽不到遠方奇遇」的體感。
+ */
+export function pickEncounter(
+  seed: number,
+  knownLocationIds: string[] = [],
+): StoryEventDef {
+  const known = new Set(knownLocationIds)
+  const weights = ENCOUNTER_EVENTS.map((e) => {
+    if (!e.locationId) return 3
+    return known.has(e.locationId) ? 5 : 1
+  })
+  const total = weights.reduce((a, b) => a + b, 0)
+  let roll = Math.abs(seed) % Math.max(1, total)
+  for (let i = 0; i < ENCOUNTER_EVENTS.length; i++) {
+    roll -= weights[i]
+    if (roll < 0) return ENCOUNTER_EVENTS[i]
+  }
+  return ENCOUNTER_EVENTS[ENCOUNTER_EVENTS.length - 1]
+}
+
+/** 尚未完成的當年（或對應）主線 */
+export function getUnfinishedMainForYear(
+  year: number,
+  storyFlags: Record<string, boolean>,
+): StoryEventDef | undefined {
+  const main = getMainEventForYear(year)
+  if (!main) return undefined
+  if (storyFlags[main.id]) return undefined
+  return main
 }

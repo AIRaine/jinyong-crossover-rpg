@@ -9,6 +9,7 @@ import {
   ENCOUNTER_EVENTS,
   MAIN_STORY_EVENTS,
   getMainEventForYear,
+  getUnfinishedMainForYear,
   pickEncounter,
   pickRumors,
 } from '../src/data/events.ts'
@@ -181,6 +182,8 @@ function inspectState(
 
   for (const [id, v] of Object.entries(state.affinity)) {
     if (!isFiniteNum(v)) push('critical', 'affinity_nan', `${id}=${String(v)}`)
+    else if (v < 0 || v > 100)
+      push('major', 'affinity_oob', `${id}=${v}（應在 0–100）`)
   }
 }
 
@@ -429,11 +432,26 @@ function stepAdvanceXun(state: GameState, rng: () => number): GameState | null {
   const tradeSilver = 5 + state.tradeRouteLevel * 8
   let pendingEventId = state.pendingEventId
   const storyFlags = { ...state.storyFlags }
-  const main = getMainEventForYear(year)
-  if (main && !storyFlags[main.id] && !pendingEventId) {
-    pendingEventId = main.id
+  const yearMain = getMainEventForYear(year)
+  if (
+    year < 5 &&
+    yearMain &&
+    storyFlags[yearMain.id] &&
+    !getUnfinishedMainForYear(year, storyFlags)
+  ) {
+    year += 1
+    month = 1
+    xun = 0
+    day = Math.max(day, (year - 1) * 360 + 1)
+  }
+  const unfinishedMain = getUnfinishedMainForYear(year, storyFlags)
+  if (unfinishedMain && !pendingEventId) {
+    pendingEventId = unfinishedMain.id
   } else if (!pendingEventId && rng() < 0.55) {
-    pendingEventId = pickEncounter(year * 30 + month * 3 + xun).id
+    pendingEventId = pickEncounter(
+      year * 30 + month * 3 + xun,
+      state.knownLocationIds,
+    ).id
   }
   return {
     ...state,
@@ -486,8 +504,22 @@ function stepResolveEvent(
     'main_y4_xuanmu',
     'main_y5_wharf',
   ].every((k) => storyFlags[k])
+  let time = { ...rewarded.time }
+  if (
+    eventId.startsWith('main_y') &&
+    !eventId.startsWith('main_y5') &&
+    time.year < 5
+  ) {
+    time = {
+      ...time,
+      year: Math.min(5, time.year + 1),
+      month: 1,
+      xun: 0,
+    }
+  }
   let next: GameState = {
     ...rewarded,
+    time,
     pendingEventId: null,
     storyFlags,
     lastOutcomeText: choice.outcomeText,

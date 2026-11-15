@@ -1,5 +1,5 @@
 import { ALCHEMY_RECIPES, MATERIAL_IDS } from '../../data/alchemy'
-import { XUN_LABELS } from '../../data/events'
+import { getUnfinishedMainForYear, XUN_LABELS } from '../../data/events'
 import { getPrologueEvent } from '../../data/prologue'
 import {
   getLocationById,
@@ -98,6 +98,13 @@ export function TravelTab({
   const xun = state.time.xun ?? 0
   const hpPill = state.inventory.find((i) => i.id === MATERIAL_IDS.hpPill)
   const qiPill = state.inventory.find((i) => i.id === MATERIAL_IDS.qiPill)
+  const unfinishedMain = getUnfinishedMainForYear(
+    state.time.year,
+    state.storyFlags,
+  )
+  const mainLoc = unfinishedMain?.locationId
+    ? getLocationById(unfinishedMain.locationId)
+    : null
 
   return (
     <section className="space-y-4 text-left">
@@ -114,6 +121,12 @@ export function TravelTab({
         <p className="mt-2 text-sm leading-7 text-paper/85">
           {current?.description ?? '你站在陌生的路口。'}
         </p>
+        {unfinishedMain && (
+          <p className="mt-3 rounded-lg bg-amber-950/45 px-3 py-2 text-xs leading-relaxed text-amber-100 ring-1 ring-amber-700/40">
+            主線提醒：{unfinishedMain.title}
+            {mainLoc ? `（線索地：${mainLoc.name}）` : ''}。推進旬制可觸發；了結後傳奇加速跨年。
+          </p>
+        )}
         {statusMsg && (
           <p className="mt-3 rounded-lg bg-teal-950/50 px-3 py-2 text-xs text-teal-100 ring-1 ring-teal-700/40">
             {statusMsg}
