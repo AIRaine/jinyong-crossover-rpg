@@ -13,6 +13,7 @@ import {
 } from '../../lib/sectRules'
 import { computeDifficultyMods } from '../../lib/difficultyModifiers'
 import type { GameState } from '../../types/game'
+import { ART, ArtBanner } from '../ArtBanner'
 
 interface SectTabProps {
   state: GameState
@@ -31,7 +32,11 @@ export function SectTab({ state, onJoin, onLeave, onContribute }: SectTabProps) 
 
   return (
     <section className="space-y-4 text-left">
-      <div className="rounded-2xl border border-paper/10 bg-ink-900/70 p-4">
+      <ArtBanner
+        src={ART.sectMountainGate}
+        alt="山門雲霧氛圍"
+        variant="banner"
+      >
         <h2 className="font-display text-xl text-paper">門派</h2>
         <p className="mt-1 text-xs leading-relaxed text-paper/55">
           同時僅能一派。退派有冷卻與銀兩；叛出永禁本派，並可能鎖死對立聯盟。門派會改變戰鬥難度與獎賞。
@@ -99,7 +104,7 @@ export function SectTab({ state, onJoin, onLeave, onContribute }: SectTabProps) 
             ].join('、')}
           </p>
         )}
-      </div>
+      </ArtBanner>
 
       {SECTS.map((sect) => {
         const home = getLocationById(sect.homeLocationId)

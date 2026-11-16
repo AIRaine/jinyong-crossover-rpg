@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import { ART, ArtBanner } from '../ArtBanner'
 import { ALCHEMY_RECIPES, MATERIAL_IDS } from '../../data/alchemy'
 import { farTravelHints, XUN_LABELS } from '../../data/events'
 import {
@@ -107,20 +108,22 @@ export function TravelTab({
   if (showPrologue) {
     return (
       <section className="space-y-4 text-left">
-        <div className="relative overflow-hidden rounded-2xl border border-paper/10 bg-ink-900/60">
-          <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top,_rgba(180,60,50,0.22),_transparent_55%),linear-gradient(180deg,_rgba(20,28,36,0.2),_rgba(8,10,14,0.85))]" />
-          <div className="rain-layer pointer-events-none absolute inset-0 opacity-40" />
-          <div className="relative space-y-3 p-4">
-            <p className="text-[11px] tracking-[0.2em] text-cinnabar-soft">遊歷事件</p>
-            <h2 className="font-display text-xl text-paper">{prologue.title}</h2>
-            <p className="text-xs text-paper/55">{prologue.locationName}</p>
-            <div className="space-y-3 text-sm leading-7 text-paper/90">
-              {prologue.paragraphs.map((p) => (
-                <p key={p.slice(0, 12)}>{p}</p>
-              ))}
-            </div>
+        <ArtBanner
+          src={ART.titleRainTemple}
+          alt="雨夜破廟序章氛圍"
+          variant="hero"
+          heavyScrim
+        >
+          <div className="rain-layer pointer-events-none absolute inset-0 opacity-35" />
+          <p className="text-[11px] tracking-[0.2em] text-cinnabar-soft">遊歷事件</p>
+          <h2 className="font-display text-xl text-paper">{prologue.title}</h2>
+          <p className="text-xs text-paper/55">{prologue.locationName}</p>
+          <div className="mt-2 space-y-3 text-sm leading-7 text-paper/90">
+            {prologue.paragraphs.map((p) => (
+              <p key={p.slice(0, 12)}>{p}</p>
+            ))}
           </div>
-        </div>
+        </ArtBanner>
 
         <div className="space-y-2">
           <h3 className="font-display text-sm text-paper/80">你要如何應對？</h3>
@@ -261,12 +264,16 @@ export function TravelTab({
 
   return (
     <section className="space-y-4 text-left">
-      <div className="rounded-2xl border border-paper/10 bg-ink-900/70 p-4">
+      <ArtBanner
+        src={ART.travelMistRoad}
+        alt="江湖路途氛圍"
+        variant="banner"
+      >
         <p className="text-[11px] tracking-[0.2em] text-cinnabar-soft">遊歷</p>
         <h2 className="mt-1 font-display text-xl text-paper">
           {current?.name ?? state.locationName}
         </h2>
-        <p className="mt-1 text-[11px] text-paper/45">
+        <p className="mt-1 text-[11px] text-paper/55">
           {state.time.year}年{state.time.month}月{XUN_LABELS[xun] ?? '上旬'} · AP{' '}
           {state.actionPoints}/{state.maxActionPoints} · 商道 Lv.
           {state.tradeRouteLevel}
@@ -472,7 +479,7 @@ export function TravelTab({
             </div>
           )}
         </div>
-      </div>
+      </ArtBanner>
 
       <div className="rounded-2xl border border-paper/10 bg-ink-900/70 p-4">
         <h3 className="font-display text-sm text-paper">江湖傳聞</h3>

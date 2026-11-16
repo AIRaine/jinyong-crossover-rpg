@@ -23,6 +23,7 @@ import {
   type EquipSlot,
   type GameState,
 } from '../../types/game'
+import { ART, ArtBanner } from '../ArtBanner'
 
 const SLOTS: EquipSlot[] = [
   'weapon',
@@ -151,7 +152,12 @@ export function CharacterTab({
         </p>
       </div>
 
-      <div className="rounded-2xl border border-teal-900/35 bg-ink-900/70 p-4">
+      <ArtBanner
+        src={ART.atlasScroll}
+        alt="見聞殘卷氛圍"
+        variant="panel"
+        className="border-teal-900/35"
+      >
         <h3 className="font-display text-sm text-teal-50/90">江湖見聞錄</h3>
         <p className="mt-1 text-[11px] text-paper/45">
           歷世殘頁：未通關也會留下；結算 NG+ 時帶入下一世。
@@ -170,7 +176,7 @@ export function CharacterTab({
             <li key={line}>{line}</li>
           ))}
         </ul>
-      </div>
+      </ArtBanner>
 
       <div className="grid grid-cols-2 gap-2">
         {[

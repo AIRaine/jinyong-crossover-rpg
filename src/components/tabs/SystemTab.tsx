@@ -3,6 +3,7 @@ import { summarizeAtlas } from '../../lib/jianghuAtlas'
 import { listAllSlotMeta } from '../../lib/saveManager'
 import { isAudioUnlocked, isMuted, setMuted } from '../../lib/soundEngine'
 import type { GameState, SaveSlotId } from '../../types/game'
+import { ART, ArtBanner } from '../ArtBanner'
 
 interface SystemTabProps {
   state: GameState
@@ -28,7 +29,11 @@ export function SystemTab({
 
   return (
     <section className="space-y-4 text-left">
-      <div className="rounded-2xl border border-paper/10 bg-ink-900/70 p-4">
+      <ArtBanner
+        src={ART.atlasScroll}
+        alt="系統與見聞氛圍"
+        variant="banner"
+      >
         <h2 className="font-display text-xl text-paper">系統</h2>
         <p className="mt-2 text-xs leading-relaxed text-paper/60">
           自動存檔槽會在每次進度寫入時更新。另有三個手動槽供你備份。資料存在此瀏覽器的
@@ -43,7 +48,7 @@ export function SystemTab({
         <p className="mt-1 text-[10px] text-paper/40">
           見聞錄未通關也會累積；NG+ 結算時帶入下一世（開新局則重來）。
         </p>
-      </div>
+      </ArtBanner>
 
       <div className="space-y-2">
         <h3 className="font-display text-sm text-paper/80">存檔槽</h3>

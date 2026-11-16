@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { ART } from './ArtBanner'
 import {
   TACTIC_AID_MAX_PER_FIGHT,
   type CombatActionKind,
@@ -74,7 +75,18 @@ export function CombatModal({ combat, onAct, onClose }: CombatModalProps) {
 
   return (
     <div className="absolute inset-0 z-50 flex flex-col bg-ink-950/95">
-      <div className="shrink-0 border-b border-cinnabar/30 px-3 py-3 text-center">
+      <div className="pointer-events-none absolute inset-0 overflow-hidden">
+        <img
+          src={ART.combatMistClash}
+          alt=""
+          aria-hidden
+          loading="lazy"
+          decoding="async"
+          className="h-full w-full object-cover object-center opacity-45"
+        />
+        <div className="absolute inset-0 bg-gradient-to-b from-ink-950/70 via-ink-950/80 to-ink-950/95" />
+      </div>
+      <div className="relative z-[1] shrink-0 border-b border-cinnabar/30 px-3 py-3 text-center">
         <p className="text-[11px] tracking-[0.2em] text-cinnabar-soft">三對三戰局</p>
         <h2 className="font-display text-lg text-paper">第 {combat.turn} 回合</h2>
         <p className="mt-1 text-[10px] leading-snug text-paper/55">
@@ -86,7 +98,7 @@ export function CombatModal({ combat, onAct, onClose }: CombatModalProps) {
         )}
       </div>
 
-      <div className="grid flex-1 grid-cols-2 gap-2 overflow-y-auto px-3 py-3">
+      <div className="relative z-[1] grid flex-1 grid-cols-2 gap-2 overflow-y-auto px-3 py-3">
         <div className="space-y-2">
           <p className="text-[11px] text-teal-200/80">我方</p>
           {combat.allies.map((f) => (
@@ -117,14 +129,14 @@ export function CombatModal({ combat, onAct, onClose }: CombatModalProps) {
         </div>
       </div>
 
-      <div className="max-h-28 shrink-0 overflow-y-auto border-t border-paper/10 px-3 py-2 text-[11px] leading-relaxed text-paper/70">
+      <div className="relative z-[1] max-h-28 shrink-0 overflow-y-auto border-t border-paper/10 bg-ink-950/40 px-3 py-2 text-[11px] leading-relaxed text-paper/70">
         {combat.logs.slice(-6).map((l, i) => (
           <p key={`${i}-${l.text.slice(0, 8)}`}>{l.text}</p>
         ))}
       </div>
 
       {actionsLocked ? (
-        <div className="shrink-0 space-y-2 border-t border-paper/10 px-3 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+        <div className="relative z-[1] shrink-0 space-y-2 border-t border-paper/10 bg-ink-950/50 px-3 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
           <p className="text-center text-sm text-paper">
             {combat.finished
               ? combat.victory
@@ -141,7 +153,7 @@ export function CombatModal({ combat, onAct, onClose }: CombatModalProps) {
           </button>
         </div>
       ) : (
-        <div className="shrink-0 grid grid-cols-2 gap-2 border-t border-paper/10 px-3 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+        <div className="relative z-[1] shrink-0 grid grid-cols-2 gap-2 border-t border-paper/10 bg-ink-950/50 px-3 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
           <button
             type="button"
             onClick={() => onAct('attack', targetId)}
