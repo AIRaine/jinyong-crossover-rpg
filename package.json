@@ -17,7 +17,8 @@
     "sim:sect-route": "npx --yes tsx scripts/sim-sect-skill-route.ts",
     "sim:travel-ap": "npx --yes tsx scripts/sim-travel-ap.ts",
     "sim:first-aid": "npx --yes tsx scripts/sim-first-aid-exploit.ts",
-    "sim:clear-usage": "npx --yes tsx scripts/sim-clear-usage.ts"
+    "sim:clear-usage": "npx --yes tsx scripts/sim-clear-usage.ts",
+    "sim:hundred-persona": "npx --yes tsx scripts/sim-hundred-persona.ts"
   },
   "dependencies": {
     "lucide-react": "^1.73.0",
