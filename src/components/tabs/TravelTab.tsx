@@ -388,6 +388,36 @@ export function TravelTab({
           <p className="mt-0.5 text-[10px] text-paper/45">
             夜間出發至破曉：AP +1（上限內）。主要 AP 靠推進一旬。
           </p>
+          <div className="mt-2 grid grid-cols-2 gap-1.5">
+            <button
+              type="button"
+              onClick={() =>
+                document
+                  .getElementById('travel-daily-tasks')
+                  ?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+              }
+              className="touch-btn rounded-lg border border-amber-800/45 bg-amber-950/35 px-2 py-2 text-left"
+            >
+              <span className="block text-[11px] text-amber-50">今日任務</span>
+              <span className="mt-0.5 block text-[10px] text-amber-100/55">
+                滾至頁底
+              </span>
+            </button>
+            <button
+              type="button"
+              onClick={() =>
+                document
+                  .getElementById('travel-story-arcs')
+                  ?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+              }
+              className="touch-btn rounded-lg border border-amber-800/45 bg-amber-950/35 px-2 py-2 text-left"
+            >
+              <span className="block text-[11px] text-amber-50">進行中事項</span>
+              <span className="mt-0.5 block text-[10px] text-amber-100/55">
+                故事弧・滾至頁底
+              </span>
+            </button>
+          </div>
           {quickDestinations.length === 0 ? (
             <p className="mt-2 text-[11px] text-paper/45">此處暫無通路。</p>
           ) : (
@@ -584,7 +614,10 @@ export function TravelTab({
       </div>
 
       <div className="space-y-3 rounded-2xl border border-paper/10 bg-ink-900/70 p-4">
-        <div className="space-y-2 rounded-lg bg-ink-950/50 px-3 py-2 ring-1 ring-paper/10">
+        <div
+          id="travel-daily-tasks"
+          className="scroll-mt-3 space-y-2 rounded-lg bg-ink-950/50 px-3 py-2 ring-1 ring-paper/10"
+        >
           <p className="text-[11px] tracking-wide text-cinnabar-soft">
             今日任務・{seasonalModifier().label}
           </p>
@@ -617,7 +650,10 @@ export function TravelTab({
           </ul>
         </div>
 
-        <div className="rounded-lg bg-ink-950/50 px-3 py-2 text-[11px] leading-relaxed text-paper/75 ring-1 ring-paper/10">
+        <div
+          id="travel-story-arcs"
+          className="scroll-mt-3 rounded-lg bg-ink-950/50 px-3 py-2 text-[11px] leading-relaxed text-paper/75 ring-1 ring-paper/10"
+        >
           <p className="text-cinnabar-soft">進行中故事弧</p>
           {arcRows.length === 0 ? (
             <p className="mt-1 text-paper/45">目前沒有進行中的故事弧。</p>
