@@ -1,5 +1,9 @@
 import { useState } from 'react'
-import type { CombatActionKind, CombatState } from '../lib/combatEngine'
+import {
+  TACTIC_AID_MAX_PER_FIGHT,
+  type CombatActionKind,
+  type CombatState,
+} from '../lib/combatEngine'
 
 interface CombatModalProps {
   combat: CombatState
@@ -74,7 +78,8 @@ export function CombatModal({ combat, onAct, onClose }: CombatModalProps) {
         <p className="text-[11px] tracking-[0.2em] text-cinnabar-soft">三對三戰局</p>
         <h2 className="font-display text-lg text-paper">第 {combat.turn} 回合</h2>
         <p className="mt-1 text-[10px] leading-snug text-paper/55">
-          低血先急救／防禦；絕招力道隨武學配置與修練提升。
+          低血可急救（本場{' '}
+          {combat.aidUsesLeft ?? 0}/{TACTIC_AID_MAX_PER_FIGHT}）／防禦；絕招吃武學配置。
         </p>
         {playerDown && !combat.finished && (
           <p className="mt-1 text-xs text-rose-200">你已無法作戰——請結束此戰。</p>
@@ -161,9 +166,10 @@ export function CombatModal({ combat, onAct, onClose }: CombatModalProps) {
           <button
             type="button"
             onClick={() => onAct('tactic_aid')}
-            className="touch-btn rounded-xl bg-teal-950/80 py-3 text-sm text-teal-100"
+            disabled={(combat.aidUsesLeft ?? 0) <= 0}
+            className="touch-btn rounded-xl bg-teal-950/80 py-3 text-sm text-teal-100 disabled:opacity-40"
           >
-            急救
+            急救（剩 {combat.aidUsesLeft ?? 0}）
           </button>
           <button
             type="button"

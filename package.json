@@ -15,7 +15,8 @@
     "sim:pay-tier": "npx --yes tsx scripts/sim-pay-tier.ts",
     "sim:difficulty": "npx --yes tsx scripts/sim-difficulty-study.ts",
     "sim:sect-route": "npx --yes tsx scripts/sim-sect-skill-route.ts",
-    "sim:travel-ap": "npx --yes tsx scripts/sim-travel-ap.ts"
+    "sim:travel-ap": "npx --yes tsx scripts/sim-travel-ap.ts",
+    "sim:first-aid": "npx --yes tsx scripts/sim-first-aid-exploit.ts"
   },
   "dependencies": {
     "lucide-react": "^1.73.0",

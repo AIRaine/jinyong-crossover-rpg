@@ -26,6 +26,12 @@ export type CombatActionKind =
   | 'tactic_aid'
   | 'defend'
 
+/** 每場戰鬥急救上限（防無限奶穩贏） */
+export const TACTIC_AID_MAX_PER_FIGHT = 2
+
+/** 急救回復比例（相對自身最大氣血） */
+export const TACTIC_AID_HEAL_RATIO = 0.2
+
 export interface CombatLogEntry {
   text: string
 }
@@ -37,6 +43,8 @@ export interface CombatState {
   logs: CombatLogEntry[]
   finished: boolean
   victory: boolean | null
+  /** 本場剩餘可急救次數 */
+  aidUsesLeft: number
 }
 
 function living(list: CombatFighter[]): CombatFighter[] {
@@ -180,9 +188,14 @@ export function createCombatEncounter(params: {
     allies,
     enemies,
     turn: 1,
-    logs: [{ text: '戰局展開——三對三對決。' }],
+    logs: [
+      {
+        text: `戰局展開——三對三對決。本場急救至多 ${TACTIC_AID_MAX_PER_FIGHT} 次。`,
+      },
+    ],
     finished: false,
     victory: null,
+    aidUsesLeft: TACTIC_AID_MAX_PER_FIGHT,
   }
 }
 
@@ -219,11 +232,19 @@ export function performPlayerAction(
     applyPoisonTick(player, state.logs)
     if (player.hp > 0) {
       if (action === 'tactic_aid') {
-        const heal = Math.floor(player.maxHp * 0.22)
-        player.hp = Math.min(player.maxHp, player.hp + heal)
-        state.logs.push({
-          text: `${player.name} 施展現代急救，回復 ${heal} 氣血`,
-        })
+        const left = state.aidUsesLeft ?? 0
+        if (left <= 0) {
+          state.logs.push({
+            text: '急救包材已用盡——本場無法再急救（每場有限次）。',
+          })
+        } else {
+          const heal = Math.floor(player.maxHp * TACTIC_AID_HEAL_RATIO)
+          player.hp = Math.min(player.maxHp, player.hp + heal)
+          state.aidUsesLeft = left - 1
+          state.logs.push({
+            text: `${player.name} 施展現代急救，回復 ${heal} 氣血（本場尚餘 ${state.aidUsesLeft} 次）`,
+          })
+        }
       } else if (action === 'defend') {
         player.def += 5
         state.logs.push({ text: `${player.name} 持守防禦，防禦暫時提高` })
