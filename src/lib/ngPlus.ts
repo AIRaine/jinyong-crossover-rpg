@@ -1,10 +1,14 @@
 import { createInitialGameState } from '../data/initialState'
+import {
+  harvestAtlasFromState,
+  mergeAtlas,
+} from './jianghuAtlas'
 import { detectEndingKey } from './ngPlusStory'
 import type { GameState } from '../types/game'
 
 /**
  * 多周目結算：保留元寶、月卡餘額、外觀、抽卡保底慣例重置、NG+ 次數與部分永久加值。
- * 劇情／地圖／裝備進度重置；保留上周目結局標籤供序章／奇遇差分。
+ * 劇情／地圖／裝備進度重置；保留上周目結局標籤與江湖見聞錄供序章／奇遇差分。
  */
 export function applyNewGamePlus(prev: GameState): GameState {
   const fresh = createInitialGameState()
@@ -16,6 +20,10 @@ export function applyNewGamePlus(prev: GameState): GameState {
   const keepSpar = prev.sparWins
   const keepGachaTotal = prev.gachaTotalPulls
   const lastEnding = detectEndingKey(prev.flags)
+  const jianghuAtlas = mergeAtlas(
+    prev.jianghuAtlas,
+    harvestAtlasFromState(prev),
+  )
 
   return {
     ...fresh,
@@ -51,6 +59,9 @@ export function applyNewGamePlus(prev: GameState): GameState {
     travelPassCharges: prev.travelPassCharges,
     paidAtkBonus: prev.paidAtkBonus,
     paidDefBonus: prev.paidDefBonus,
+    renown: Math.min(12, Math.floor((prev.renown ?? 0) * 0.15)),
+    alignment: Math.round((prev.alignment ?? 0) * 0.25),
+    jianghuAtlas,
     flags: {
       ...fresh.flags,
       ngPlusFrom: prev.ngPlusCount + 1,

@@ -36,6 +36,7 @@ export const LOCATIONS: LocationDef[] = [
       'loc_east_wharf',
       'loc_yanmen',
       'loc_tianji_hall',
+      'loc_huashan',
     ],
     travelStamina: 7,
     npcIds: [
@@ -59,6 +60,7 @@ export const LOCATIONS: LocationDef[] = [
       'loc_wudang',
       'loc_tianji_hall',
       'loc_emei_gate',
+      'loc_peach_island',
     ],
     travelStamina: 8,
     npcIds: ['npc_wei_xiaobao', 'npc_wang_yuyan', 'npc_shuang_er'],
@@ -125,7 +127,7 @@ export const LOCATIONS: LocationDef[] = [
     kind: 'sect',
     region: '西嶽',
     description: '削壁千仞，論劍臺風聲如嘯。登頂本身就是一場試煉。',
-    links: ['loc_suhang', 'loc_xuanmu', 'loc_emei_gate'],
+    links: ['loc_suhang', 'loc_xuanmu', 'loc_emei_gate', 'loc_xiangyang'],
     travelStamina: 10,
     npcIds: [
       'npc_linghu_chong',
@@ -185,7 +187,7 @@ export const LOCATIONS: LocationDef[] = [
     kind: 'secret',
     region: '東海孤嶼',
     description: '奇門佈陣，花氣與潮聲交織。皇藥師的琴音有時比刀更嚇人。',
-    links: ['loc_east_wharf', 'loc_dead_tomb'],
+    links: ['loc_east_wharf', 'loc_dead_tomb', 'loc_luoyang_post'],
     travelStamina: 9,
     npcIds: ['npc_huang_yaoshi', 'npc_huang_rong', 'npc_ouyang_feng'],
     gather: 'both',

@@ -20,12 +20,22 @@ import {
   pickEncounter,
   pickRumors,
 } from '../data/events'
+import {
+  applyBeatPathExposure,
+  canScheduleFinaleWithPath,
+  computeJourneyProfile,
+  effectiveBeatCooldown,
+  endingBranchLabel,
+} from './journeyPath'
 import type { GameState, GameTime } from '../types/game'
 
-/** 結局閘：東海潮信不可經「當年未了結主線」後門掛上 */
+/** 結局閘：節拍數＋旅程投入（門派／同伴／勝仗／非開局招） */
 export function canScheduleFinale(state: GameState): boolean {
-  if (state.unlockedArcIds.includes('arc_tide_ending')) return true
-  return countCompletedBeats(state) >= FINALE_MIN_BEATS
+  return canScheduleFinaleWithPath(
+    state,
+    FINALE_MIN_BEATS,
+    countCompletedBeats(state),
+  )
 }
 
 /**
@@ -113,6 +123,27 @@ export function applyMainBeatResolved(
     }),
   }
 
+  // 節拍了結 → 揭露冷門駐地／輕推冷門 NPC，創作路線才有露出
+  next = applyBeatPathExposure(
+    next,
+    completedBeatIds.length + (next.routeSeed % 7),
+  )
+
+  if (eventId === 'main_y5_wharf') {
+    const profile = computeJourneyProfile(next)
+    next = {
+      ...next,
+      flags: {
+        ...next.flags,
+        ending_branch: profile.endingBranch,
+        ending_label: endingBranchLabel(profile.endingBranch),
+      },
+      lastOutcomeText:
+        (next.lastOutcomeText ? `${next.lastOutcomeText}\n` : '') +
+        `【${endingBranchLabel(profile.endingBranch)}】旅程分 ${profile.diversityScore}｜${profile.labels.join('、')}`,
+    }
+  }
+
   if (eventId.startsWith('main_') || eventId.startsWith('arc_')) {
     next = bumpWeeklyGoal(next, 'complete_beat', 1)
   }
@@ -150,19 +181,32 @@ export function resolveAdvanceXunStory(
 
   const yearMain = getMainEventForYear(year)
   const yearMainDone = Boolean(yearMain && storyFlags[yearMain.id])
+  const path = computeJourneyProfile(routed)
+  const combatBias =
+    typeof routed.flags.combat_beat_bias === 'number'
+      ? routed.flags.combat_beat_bias
+      : 0
+  // combat_beat_bias：勝仗可為負（加速）、敗仗為正（拖慢）
+  const softNeed =
+    STORY_BEAT_COOLDOWN_XUN + path.softYearExtra + Math.max(0, combatBias)
+  const beatNeed =
+    effectiveBeatCooldown(routed, STORY_BEAT_COOLDOWN_XUN) + combatBias
 
-  // 軟進年：冷卻滿＋當年主線已了＋未滿五年
+  // 軟進年：冷卻滿＋當年主線已了＋未滿五年；空轉旅程需多捱幾旬
   if (
     year < 5 &&
     yearMainDone &&
-    xunsSinceLastBeat >= STORY_BEAT_COOLDOWN_XUN &&
+    xunsSinceLastBeat >= softNeed &&
     !getUnfinishedMainForYear(year, storyFlags)
   ) {
     year += 1
     month = 1
     xun = 0
     day = Math.max(day, (year - 1) * 360 + 1)
-    softYearNote = `歲月流轉：已至${year}年（節拍冷卻後）。`
+    softYearNote =
+      path.pathTier === 'hollow'
+        ? `歲月流轉：已至${year}年（空轉旅程，潮信仍遠）。`
+        : `歲月流轉：已至${year}年（節拍冷卻後）。`
     xunsSinceLastBeat = STORY_BEAT_COOLDOWN_XUN
   }
 
@@ -179,11 +223,20 @@ export function resolveAdvanceXunStory(
     xunsSinceLastBeat,
     time: { year, month, day, period, xun },
   }
-  const nextEvent =
-    getNextStoryEventId(routedForPick) ?? pickFallbackMainEventId(routedForPick)
+  // 空轉：拉長節拍間隔，逼出研究／組隊／戰鬥才加速
+  const cooledEnough = xunsSinceLastBeat >= beatNeed
+  const nextEvent = cooledEnough
+    ? getNextStoryEventId({
+        ...routedForPick,
+        // getNext 內部仍看 STORY_BEAT_COOLDOWN；已過 beatNeed 時強制視為可掛
+        xunsSinceLastBeat: Math.max(
+          routedForPick.xunsSinceLastBeat,
+          STORY_BEAT_COOLDOWN_XUN,
+        ),
+      }) ?? pickFallbackMainEventId(routedForPick)
+    : undefined
 
   if (nextEvent && !nextPending) {
-    // 冷卻未滿時 getNext 可能仍回傳「同年未了結」；允許掛上
     nextPending = nextEvent
   } else if (!nextPending && encounterRoll < 0.45) {
     nextPending = pickEncounter(

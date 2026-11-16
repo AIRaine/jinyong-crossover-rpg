@@ -1,5 +1,5 @@
 /** 存檔結構版本；變更欄位時遞增並在 migrateSaveData 處理 */
-export const SAVE_VERSION = 10 as const
+export const SAVE_VERSION = 14 as const
 
 /** 底部分頁 */
 export type TabId =
@@ -282,6 +282,10 @@ export interface EventRewards {
   /** 直接解鎖武學至第 1 重（已學者略過） */
   martialIds?: string[]
   flags?: GameFlags
+  /** 江湖聲名升降（重大選擇／奇遇） */
+  renownDelta?: number
+  /** 正邪傾向升降：正＝俠義、負＝權謀 */
+  alignmentDelta?: number
   questsToAdd?: Quest[]
   questsToComplete?: string[]
   combatPlaceholder?: CombatPlaceholderResult
@@ -414,6 +418,13 @@ export interface SectDef {
   rankThresholds: number[]
 }
 
+/** 門派履歷（入／退／叛） */
+export interface SectHistoryEntry {
+  sectId: string
+  mode: 'join' | 'leave' | 'betray'
+  atXun: number
+}
+
 export interface ShopOffer {
   id: string
   name: string
@@ -494,6 +505,16 @@ export interface GameState {
   /** 門派 */
   sectId: string | null
   sectContribution: number
+  /** 累計推進旬數（退派冷卻用） */
+  lifetimeXuns: number
+  /** 永禁再入的門派 id */
+  sectBanIds: string[]
+  /** 叛出後永禁的聯盟（orthodox／heretic／tomb…） */
+  sectBannedAlliances: string[]
+  /** 可再申請入門的 lifetimeXuns 門檻 */
+  sectJoinCooldownUntilXun: number
+  /** 入退派履歷 */
+  sectHistory: SectHistoryEntry[]
   /** 已觸發主線／奇遇 */
   storyFlags: Record<string, boolean>
   /** 當前可選事件 id */
@@ -523,6 +544,8 @@ export interface GameState {
   combatLoseStreak: number
   /** 本旬已開戰路遇次數（推進旬制歸零） */
   banditFightsThisXun: number
+  /** 累計路遇勝場（旅程品質／結局閘） */
+  lifetimeBanditWins: number
   /** 本旬已開戰切磋次數（推進旬制歸零） */
   sparFightsThisXun: number
   /** 遊歷通票：之後若干次移動減半精力 */
@@ -542,6 +565,22 @@ export interface GameState {
   daily: DailyLoginState
   /** 真實日曆週目標 */
   weekly: WeeklyGoalsState
+  /** 江湖聲名 0～100（招募／潮信請帖） */
+  renown: number
+  /** 正邪傾向 -50～+50（正偏俠義、負偏權謀） */
+  alignment: number
+  /**
+   * 江湖見聞錄（輪迴圖鑑）：歷世武學／足迹／故人／話本／結局／旗標
+   * 未通關亦累積；NG+ 保留
+   */
+  jianghuAtlas: {
+    martialIds: string[]
+    locationIds: string[]
+    npcIds: string[]
+    beatIds: string[]
+    endingKeys: string[]
+    challengeIds: string[]
+  }
 }
 
 export interface ApplyRewardsResult {

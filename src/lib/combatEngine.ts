@@ -1,4 +1,5 @@
 import { calcDamage } from './combatMath'
+import { stageYearEnemyScale } from './growthStage'
 
 export type CombatStatus = 'none' | 'poison' | 'stun'
 
@@ -15,6 +16,8 @@ export interface CombatFighter {
   poisonTurns: number
   stunned: boolean
   isPlayer?: boolean
+  /** 絕招傷害倍率（由武學配置推導；未設則用預設） */
+  skillPower?: number
 }
 
 export type CombatActionKind =
@@ -23,6 +26,12 @@ export type CombatActionKind =
   | 'tactic_flash'
   | 'tactic_aid'
   | 'defend'
+
+/** 每場戰鬥急救上限（防無限奶穩贏） */
+export const TACTIC_AID_MAX_PER_FIGHT = 2
+
+/** 急救回復比例（相對自身最大氣血） */
+export const TACTIC_AID_HEAL_RATIO = 0.2
 
 export interface CombatLogEntry {
   text: string
@@ -35,6 +44,8 @@ export interface CombatState {
   logs: CombatLogEntry[]
   finished: boolean
   victory: boolean | null
+  /** 本場剩餘可急救次數 */
+  aidUsesLeft: number
 }
 
 function living(list: CombatFighter[]): CombatFighter[] {
@@ -138,16 +149,17 @@ export function createCombatEncounter(params: {
   ]
   while (allies.length < 3) {
     const n = allies.length + 1
+    // 臨時幫手偏弱，避免無隊友時仍碾壓；鼓勵俠侶／配置
     allies.push(
       wrap(
         {
           id: `ally_pad_${n}`,
           name: `臨時幫手${n}`,
-          hp: 42,
-          maxHp: 42,
-          atk: 9,
-          def: 5,
-          internal: 15,
+          hp: 32,
+          maxHp: 32,
+          atk: 7,
+          def: 4,
+          internal: 12,
         },
         'ally',
       ),
@@ -177,9 +189,14 @@ export function createCombatEncounter(params: {
     allies,
     enemies,
     turn: 1,
-    logs: [{ text: '戰局展開——三對三對決。' }],
+    logs: [
+      {
+        text: `戰局展開——三對三對決。本場急救至多 ${TACTIC_AID_MAX_PER_FIGHT} 次。`,
+      },
+    ],
     finished: false,
     victory: null,
+    aidUsesLeft: TACTIC_AID_MAX_PER_FIGHT,
   }
 }
 
@@ -216,11 +233,19 @@ export function performPlayerAction(
     applyPoisonTick(player, state.logs)
     if (player.hp > 0) {
       if (action === 'tactic_aid') {
-        const heal = Math.floor(player.maxHp * 0.22)
-        player.hp = Math.min(player.maxHp, player.hp + heal)
-        state.logs.push({
-          text: `${player.name} 施展現代急救，回復 ${heal} 氣血`,
-        })
+        const left = state.aidUsesLeft ?? 0
+        if (left <= 0) {
+          state.logs.push({
+            text: '急救包材已用盡——本場無法再急救（每場有限次）。',
+          })
+        } else {
+          const heal = Math.floor(player.maxHp * TACTIC_AID_HEAL_RATIO)
+          player.hp = Math.min(player.maxHp, player.hp + heal)
+          state.aidUsesLeft = left - 1
+          state.logs.push({
+            text: `${player.name} 施展現代急救，回復 ${heal} 氣血（本場尚餘 ${state.aidUsesLeft} 次）`,
+          })
+        }
       } else if (action === 'defend') {
         player.def += 5
         state.logs.push({ text: `${player.name} 持守防禦，防禦暫時提高` })
@@ -232,7 +257,8 @@ export function performPlayerAction(
             target.status = 'stun'
             basicStrike(state, player, target, 0.65, '以妖光照射')
           } else if (action === 'skill') {
-            basicStrike(state, player, target, 1.45, '使出絕招攻向')
+            const mul = Math.max(1.15, Math.min(1.85, player.skillPower ?? 1.35))
+            basicStrike(state, player, target, mul, '使出絕招攻向')
             if (Math.random() < 0.5) {
               target.status = 'poison'
               target.poisonTurns = Math.max(target.poisonTurns, 2)
@@ -284,14 +310,21 @@ export function performPlayerAction(
 export function makeBanditEncounter(
   player: Omit<CombatFighter, 'side' | 'status' | 'poisonTurns' | 'stunned'>,
   allyExtras: Omit<CombatFighter, 'side' | 'status' | 'poisonTurns' | 'stunned'>[],
-  opts: { loseStreak?: number; year?: number } = {},
+  opts: { loseStreak?: number; year?: number; enemyScale?: number } = {},
 ): CombatState {
   const streak = Math.max(0, opts.loseStreak ?? 0)
   const year = Math.max(1, opts.year ?? 1)
-  // 連敗：每層約 -12% 敵方面板，最多三層；年分：每年 +4%（上限 +20%）
+  // 連敗保護；年分台階（y1→y5 約 1.0→1.58）；門派／養成落後另乘 enemyScale
+  // 真實隊友溢出抬敵，避免雙人免費穩贏
   const soften = Math.max(0.62, 1 - streak * 0.12)
-  const yearScale = Math.min(1.2, 1 + (year - 1) * 0.04)
-  const scale = soften * yearScale
+  const yearScale = stageYearEnemyScale(year)
+  const pathScale = Math.max(0.85, Math.min(1.45, opts.enemyScale ?? 1))
+  const realAllies = Math.max(0, Math.min(2, allyExtras.length))
+  const padBaselineAtk = 7
+  const allyAtk = allyExtras.reduce((s, a) => s + (a.atk ?? 0), 0)
+  const surplusAtk = Math.max(0, allyAtk - realAllies * padBaselineAtk)
+  const partyScale = Math.min(1.22, 1 + surplusAtk * 0.015)
+  const scale = soften * yearScale * pathScale * partyScale
 
   const mk = (
     id: string,
@@ -311,9 +344,9 @@ export function makeBanditEncounter(
     player,
     allies: allyExtras,
     enemies: [
-      mk('bandit_1', '黑衣刀客', { hp: 58, atk: 14, def: 6, internal: 18 }),
-      mk('bandit_2', '斷橋槍匪', { hp: 50, atk: 12, def: 8, internal: 16 }),
-      mk('bandit_3', '蒙面弓手', { hp: 44, atk: 16, def: 4, internal: 14 }),
+      mk('bandit_1', '黑衣刀客', { hp: 64, atk: 15, def: 7, internal: 19 }),
+      mk('bandit_2', '斷橋槍匪', { hp: 56, atk: 13, def: 8, internal: 17 }),
+      mk('bandit_3', '蒙面弓手', { hp: 48, atk: 17, def: 5, internal: 15 }),
     ],
   })
   if (streak >= 2) {
@@ -321,6 +354,13 @@ export function makeBanditEncounter(
       {
         text: `連敗 ${streak} 場後，對手氣勢已衰——這是重整旗鼓的機會。`,
       },
+    ]
+  } else if (realAllies >= 2) {
+    encounter.logs = [
+      {
+        text: '對手見你結伴而行，眼神更狠——雙人組並非穩贏。',
+      },
+      ...encounter.logs,
     ]
   }
   return encounter

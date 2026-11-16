@@ -17,6 +17,7 @@ import {
 } from '../../lib/gachaEngine'
 import { EQUIP_QUALITY_LABEL } from '../../data/equipments'
 import type { EquipmentDef, GameState } from '../../types/game'
+import { ART, ArtBanner } from '../ArtBanner'
 
 interface ShopTabProps {
   state: GameState
@@ -42,7 +43,11 @@ export function ShopTab({
 
   return (
     <section className="space-y-4 text-left">
-      <div className="rounded-2xl border border-paper/10 bg-ink-900/70 p-4">
+      <ArtBanner
+        src={ART.shopLanternBazaar}
+        alt="夜市燈籠氛圍"
+        variant="banner"
+      >
         <h2 className="font-display text-xl text-paper">商城</h2>
         <p className="mt-1 text-xs text-paper/55">
           銀兩 {state.currency.silver} · 元寶 {state.currency.yuanbao}
@@ -74,7 +79,7 @@ export function ShopTab({
             </button>
           ))}
         </div>
-      </div>
+      </ArtBanner>
 
       {pane === 'gacha' && (
         <div className="space-y-3">

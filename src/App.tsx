@@ -37,7 +37,10 @@ export default function App() {
           />
         )}
 
-        <main className="relative flex-1 overflow-y-auto overscroll-contain px-3 py-3">
+        <main
+          id="app-main-scroll"
+          className="relative flex-1 overflow-y-auto overscroll-contain px-3 py-3"
+        >
           {game.tab === 'travel' && (
             <TravelTab
               state={game.state}
@@ -55,6 +58,8 @@ export default function App() {
               onUsePill={game.useConsumable}
               onClaimDaily={game.claimDailyLogin}
               onClaimWeekly={game.claimWeeklyGoal}
+              onNavigateTab={game.changeTab}
+              onStartChallenge={game.startChallenge}
             />
           )}
           {game.tab === 'character' && (
@@ -81,6 +86,7 @@ export default function App() {
             <SectTab
               state={game.state}
               onJoin={game.joinSect}
+              onLeave={game.leaveSect}
               onContribute={game.contributeSect}
             />
           )}

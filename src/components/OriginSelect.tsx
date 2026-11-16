@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import { ART, ArtBanner } from './ArtBanner'
 import { ORIGINS, getOriginDisplayName } from '../data/origins'
 import {
   PLAYER_GENDER_LABEL,
@@ -61,7 +62,25 @@ export function OriginSelect({ onSelect, ngPlusGuide }: OriginSelectProps) {
 
   return (
     <div className="absolute inset-0 z-50 flex flex-col bg-ink-950">
-      <div className="shrink-0 border-b border-cinnabar/30 px-4 pb-3 pt-[max(0.75rem,env(safe-area-inset-top))] text-center">
+      {step === 'pick' && (
+        <div className="shrink-0 px-3 pt-[max(0.5rem,env(safe-area-inset-top))]">
+          <ArtBanner
+            src={ART.titleRainTemple}
+            alt="雨夜破廟氛圍"
+            variant="hero"
+            className="rounded-xl"
+          >
+            <p className="text-[11px] tracking-[0.22em] text-cinnabar-soft">
+              穿越諧音武俠
+            </p>
+            <p className="mt-1 font-display text-lg text-paper">雨夜破廟之前</p>
+            <p className="mt-1 text-[11px] leading-relaxed text-paper/60">
+              選天賦、填職稱——再墜入襄揚雨夜。
+            </p>
+          </ArtBanner>
+        </div>
+      )}
+      <div className="shrink-0 border-b border-cinnabar/30 px-4 pb-3 pt-3 text-center">
         <p className="text-[11px] tracking-[0.2em] text-cinnabar-soft">
           {ngPlusGuide ? 'NG+ 新周目' : '開局'}
         </p>

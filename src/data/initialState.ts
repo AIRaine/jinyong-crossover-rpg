@@ -126,6 +126,11 @@ export function createInitialGameState(): GameState {
     partnerId: null,
     sectId: null,
     sectContribution: 0,
+    lifetimeXuns: 0,
+    sectBanIds: [],
+    sectBannedAlliances: [],
+    sectJoinCooldownUntilXun: 0,
+    sectHistory: [],
     storyFlags: {},
     pendingEventId: null,
     rumors: [
@@ -145,6 +150,7 @@ export function createInitialGameState(): GameState {
     ngPlusReady: false,
     combatLoseStreak: 0,
     banditFightsThisXun: 0,
+    lifetimeBanditWins: 0,
     sparFightsThisXun: 0,
     travelPassCharges: 0,
     paidAtkBonus: 0,
@@ -161,6 +167,16 @@ export function createInitialGameState(): GameState {
     weekly: {
       weekKey: calendarWeekKey(),
       goals: buildWeeklyGoals(calendarWeekKey()),
+    },
+    renown: 0,
+    alignment: 0,
+    jianghuAtlas: {
+      martialIds: [],
+      locationIds: [],
+      npcIds: [],
+      beatIds: [],
+      endingKeys: [],
+      challengeIds: [],
     },
   }
 }

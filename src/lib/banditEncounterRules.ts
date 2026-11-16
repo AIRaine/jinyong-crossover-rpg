@@ -17,6 +17,10 @@ export const BANDIT_WIN_POTENTIAL_FULL = 2
 export const BANDIT_WIN_SILVER_DECAYED = 10
 export const BANDIT_WIN_POTENTIAL_DECAYED = 1
 
+/** 事件戰勝利加碼（劇情仍會了結；勝負影響資源，鼓勵讀招） */
+export const EVENT_COMBAT_WIN_SILVER = 18
+export const EVENT_COMBAT_WIN_POTENTIAL = 3
+
 export type BanditStartBlockReason =
   | 'prologue'
   | 'low_hp'

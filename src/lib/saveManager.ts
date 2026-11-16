@@ -11,6 +11,8 @@ import {
 } from '../data/origins'
 import { NPCS } from '../data/npcs'
 import { grantStarterGear } from './starterGear'
+import { emptyJianghuAtlas, mergeAtlas } from './jianghuAtlas'
+import { applyRouteAxisMarks } from './renownAxis'
 
 const STORAGE_PREFIX = 'jinyong-crossover-rpg:save:v'
 const META_KEY = 'jinyong-crossover-rpg:save-meta'
@@ -150,6 +152,10 @@ export function migrateSaveData(raw: unknown): GameState {
       typeof data.banditFightsThisXun === 'number'
         ? data.banditFightsThisXun
         : base.banditFightsThisXun,
+    lifetimeBanditWins:
+      typeof data.lifetimeBanditWins === 'number'
+        ? data.lifetimeBanditWins
+        : base.lifetimeBanditWins,
     sparFightsThisXun:
       typeof data.sparFightsThisXun === 'number'
         ? data.sparFightsThisXun
@@ -327,6 +333,56 @@ export function migrateSaveData(raw: unknown): GameState {
     if (typeof migrated.sparFightsThisXun !== 'number') {
       migrated.sparFightsThisXun = 0
     }
+  }
+
+  // v11 → v12：路遇累計勝場（旅程品質）
+  if (version < 12) {
+    if (typeof migrated.lifetimeBanditWins !== 'number') {
+      migrated.lifetimeBanditWins = 0
+    }
+  }
+
+  // v12 → v13：江湖聲名／正邪傾向（群俠對照軸）
+  if (version < 13) {
+    if (typeof migrated.renown !== 'number') migrated.renown = 0
+    if (typeof migrated.alignment !== 'number') migrated.alignment = 0
+  }
+  if (typeof migrated.renown !== 'number') migrated.renown = 0
+  if (typeof migrated.alignment !== 'number') migrated.alignment = 0
+  // 舊存若已有路線旗，補一次聲名／傾向標記
+  migrated = applyRouteAxisMarks(migrated).state
+
+  // v13 → v14：江湖見聞錄（輪迴圖鑑）
+  if (version < 14 || !migrated.jianghuAtlas || typeof migrated.jianghuAtlas !== 'object') {
+    migrated.jianghuAtlas = emptyJianghuAtlas()
+  } else {
+    const a = migrated.jianghuAtlas
+    migrated.jianghuAtlas = mergeAtlas(emptyJianghuAtlas(), {
+      martialIds: Array.isArray(a.martialIds) ? a.martialIds : [],
+      locationIds: Array.isArray(a.locationIds) ? a.locationIds : [],
+      npcIds: Array.isArray(a.npcIds) ? a.npcIds : [],
+      beatIds: Array.isArray(a.beatIds) ? a.beatIds : [],
+      endingKeys: Array.isArray(a.endingKeys) ? a.endingKeys : [],
+      challengeIds: Array.isArray(a.challengeIds) ? a.challengeIds : [],
+    })
+  }
+
+  // v10 → v11：門派退叛／互斥履歷
+  if (version < 11) {
+    if (typeof migrated.lifetimeXuns !== 'number') {
+      const y = Math.max(1, migrated.time?.year ?? 1)
+      const m = Math.max(1, migrated.time?.month ?? 1)
+      const x = Math.max(0, migrated.time?.xun ?? 0)
+      migrated.lifetimeXuns = (y - 1) * 36 + (m - 1) * 3 + x
+    }
+    if (!Array.isArray(migrated.sectBanIds)) migrated.sectBanIds = []
+    if (!Array.isArray(migrated.sectBannedAlliances)) {
+      migrated.sectBannedAlliances = []
+    }
+    if (typeof migrated.sectJoinCooldownUntilXun !== 'number') {
+      migrated.sectJoinCooldownUntilXun = 0
+    }
+    if (!Array.isArray(migrated.sectHistory)) migrated.sectHistory = []
   }
 
   // v9 → v10：故事弧／日登／週目標（數週節奏骨架）

@@ -1,7 +1,9 @@
 import { useMemo, useState } from 'react'
+import { summarizeAtlas } from '../../lib/jianghuAtlas'
 import { listAllSlotMeta } from '../../lib/saveManager'
 import { isAudioUnlocked, isMuted, setMuted } from '../../lib/soundEngine'
 import type { GameState, SaveSlotId } from '../../types/game'
+import { ART, ArtBanner } from '../ArtBanner'
 
 interface SystemTabProps {
   state: GameState
@@ -23,10 +25,15 @@ export function SystemTab({
   const [mute, setMuteLocal] = useState(isMuted())
   const [tick, setTick] = useState(0)
   const metas = useMemo(() => listAllSlotMeta(), [state.updatedAt, tick])
+  const atlas = summarizeAtlas(state)
 
   return (
     <section className="space-y-4 text-left">
-      <div className="rounded-2xl border border-paper/10 bg-ink-900/70 p-4">
+      <ArtBanner
+        src={ART.atlasScroll}
+        alt="系統與見聞氛圍"
+        variant="banner"
+      >
         <h2 className="font-display text-xl text-paper">系統</h2>
         <p className="mt-2 text-xs leading-relaxed text-paper/60">
           自動存檔槽會在每次進度寫入時更新。另有三個手動槽供你備份。資料存在此瀏覽器的
@@ -35,7 +42,13 @@ export function SystemTab({
         <p className="mt-2 text-[11px] text-paper/40">
           存檔版本 v{state.version} · 最近更新 {new Date(state.updatedAt).toLocaleString('zh-TW')}
         </p>
-      </div>
+        <p className="mt-2 text-[11px] leading-relaxed text-teal-100/75">
+          {atlas.line}
+        </p>
+        <p className="mt-1 text-[10px] text-paper/40">
+          見聞錄未通關也會累積；NG+ 結算時帶入下一世（開新局則重來）。
+        </p>
+      </ArtBanner>
 
       <div className="space-y-2">
         <h3 className="font-display text-sm text-paper/80">存檔槽</h3>
@@ -111,8 +124,9 @@ export function SystemTab({
       <div className="rounded-2xl border border-amber-700/35 bg-amber-950/25 p-4">
         <h3 className="font-display text-sm text-paper">多周目（NG+）</h3>
         <p className="mt-1 text-xs leading-relaxed text-paper/60">
-          已完成周目 {state.ngPlusCount}。結算後保留元寶、月卡餘額、外觀、切磋勝場與結局標籤，
-          重置劇情／地圖／裝備進度；二／三周目主線、奇遇與序章會換文案，並略加永久攻防。
+          已完成周目 {state.ngPlusCount}。結算後保留元寶、月卡餘額、外觀、切磋勝場、結局標籤與
+          <span className="text-teal-100/90">江湖見聞錄</span>
+          ，重置劇情／地圖／裝備進度；二／三周目主線、奇遇與序章會換文案，並略加永久攻防。
         </p>
         <p className="mt-1 text-[11px] text-paper/45">
           {typeof state.flags.lastEnding === 'string'
