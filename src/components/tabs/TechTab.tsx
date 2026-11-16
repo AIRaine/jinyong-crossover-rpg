@@ -265,6 +265,9 @@ function LoadoutPanel({
       <p className="mt-2 text-[11px] text-paper/40">
         悟性 {state.comprehension} · 根骨 {state.rootBone}（影響瓶頸）
       </p>
+      <p className="mt-1 text-[11px] text-amber-200/70">
+        主動欄有 4 格：新學招式會自動占空位或替換開局招。入派／組隊／路遇勝與非開局配置影響潮信結局。
+      </p>
     </div>
   )
 }
@@ -293,12 +296,19 @@ function ConfigButton({
           } else if (emptyIdx >= 0) {
             onSetSlot('active', artId, emptyIdx)
           } else {
-            onSetSlot('active', artId, 0)
+            const starterIdx = state.martialLoadout.activeIds.findIndex(
+              (x) => x === 'ma_act_flashlight' || x === 'ma_act_luoying',
+            )
+            onSetSlot('active', artId, starterIdx >= 0 ? starterIdx : 0)
           }
         }}
         className="touch-btn rounded-lg bg-paper/10 px-3 py-2.5 text-xs text-paper"
       >
-        {already ? '卸下' : emptyIdx >= 0 ? '配置' : '替換1'}
+        {already
+          ? '卸下'
+          : emptyIdx >= 0
+            ? '配置'
+            : '替換開局招'}
       </button>
     )
   }

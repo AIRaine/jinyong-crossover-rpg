@@ -150,6 +150,10 @@ export function migrateSaveData(raw: unknown): GameState {
       typeof data.banditFightsThisXun === 'number'
         ? data.banditFightsThisXun
         : base.banditFightsThisXun,
+    lifetimeBanditWins:
+      typeof data.lifetimeBanditWins === 'number'
+        ? data.lifetimeBanditWins
+        : base.lifetimeBanditWins,
     sparFightsThisXun:
       typeof data.sparFightsThisXun === 'number'
         ? data.sparFightsThisXun
@@ -326,6 +330,13 @@ export function migrateSaveData(raw: unknown): GameState {
   if (version < 9) {
     if (typeof migrated.sparFightsThisXun !== 'number') {
       migrated.sparFightsThisXun = 0
+    }
+  }
+
+  // v11 → v12：路遇累計勝場（旅程品質）
+  if (version < 12) {
+    if (typeof migrated.lifetimeBanditWins !== 'number') {
+      migrated.lifetimeBanditWins = 0
     }
   }
 

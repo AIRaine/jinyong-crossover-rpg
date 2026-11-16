@@ -56,7 +56,11 @@ import {
   buildPartyCombatants,
   buildPlayerCombatant,
 } from '../src/lib/buildCombatants.ts'
-import { SECT_MARTIAL_GRANTS, grantMartialArts } from '../src/lib/martialUnlock.ts'
+import {
+  SECT_MARTIAL_GRANTS,
+  LOCATION_MARTIAL_FINDS,
+  grantMartialArts,
+} from '../src/lib/martialUnlock.ts'
 import { canProgressMartial } from '../src/lib/martialGates.ts'
 import {
   applyJoinSect,
@@ -67,6 +71,12 @@ import { computeDifficultyMods } from '../src/lib/difficultyModifiers.ts'
 import { flavorEventForNgPlus } from '../src/lib/ngPlusStory.ts'
 import { applyNightTravelApRestore } from '../src/lib/travelApRules.ts'
 import { canSettleNgPlus } from '../src/lib/ngPlus.ts'
+import {
+  COLD_MARTIAL_IDS,
+  COLD_SECT_IDS,
+  STARTER_MARTIAL_IDS,
+  computeJourneyProfile,
+} from '../src/lib/journeyPath.ts'
 import type { GameState, InventoryItem } from '../src/types/game.ts'
 
 const OUT =
@@ -74,8 +84,24 @@ const OUT =
 
 const PERSONAS = 40
 const RUNS_PER = 10 // 400 局
-const MAX_STEPS = 380
+const MAX_STEPS = 520
 const COMBO_FIGHTS = 40
+
+/** 上一輪 clear-usage 基準（修前） */
+const BASELINE = {
+  clearRate: 99.3,
+  martialNearUnused: 18,
+  coldRates: {
+    ma_qing_icefire: 0,
+    ma_qing_tomb: 0.5,
+    ma_act_xuantie: 0.8,
+    ma_qing_emei: 2,
+    ma_act_needle: 2,
+    sect_riyue: 1.5,
+    sect_huashan: 2.3,
+    sect_taohua: 3.1,
+  } as Record<string, number>,
+}
 
 type Style =
   | 'main'
@@ -108,6 +134,11 @@ type UsageSnap = {
   cleared: boolean
   enemyScaleEnd: number
   panelAtk: number
+  pathTier: string
+  diversityScore: number
+  endingBranch: string | null
+  coldMartialEquipped: number
+  nonStarterEquipped: number
 }
 
 function mulberry32(seed: number) {
@@ -249,32 +280,37 @@ function applyPrologue(state: GameState, rng: () => number): GameState {
   })
 }
 
-function bestArt(
-  state: GameState,
-  kind: string,
-  limit = 1,
-): string[] {
-  return MARTIAL_ARTS.filter(
-    (a) => a.kind === kind && (state.martialProgress[a.id] ?? 0) > 0,
-  )
-    .sort(
-      (a, b) =>
-        (state.martialProgress[b.id] ?? 0) - (state.martialProgress[a.id] ?? 0),
-    )
-    .slice(0, limit)
-    .map((a) => a.id)
-}
-
 function autoEquip(state: GameState): GameState {
-  const internals = bestArt(state, 'internal')
-  const hearts = bestArt(state, 'heart')
-  const qings = bestArt(state, 'qinggong')
-  const actives = bestArt(state, 'active', 2)
+  // 優先非開局招，再以等級排序——模擬玩家「研究有回報」的配置
+  const rank = (id: string) => {
+    const lv = state.martialProgress[id] ?? 0
+    const cold = (COLD_MARTIAL_IDS as readonly string[]).includes(id) ? 30 : 0
+    const starter = (STARTER_MARTIAL_IDS as readonly string[]).includes(id)
+      ? -20
+      : 10
+    return lv * 10 + cold + starter
+  }
+  const pickKind = (kind: string, limit: number) =>
+    MARTIAL_ARTS.filter(
+      (a) => a.kind === kind && (state.martialProgress[a.id] ?? 0) > 0,
+    )
+      .sort((a, b) => rank(b.id) - rank(a.id))
+      .slice(0, limit)
+      .map((a) => a.id)
+  const internals = pickKind('internal', 1)
+  const hearts = pickKind('heart', 1)
+  const qings = pickKind('qinggong', 1)
+  const actives = pickKind('active', 4)
   const loadout = {
     internalId: internals[0] ?? null,
     heartId: hearts[0] ?? null,
     qinggongId: qings[0] ?? null,
-    activeIds: [actives[0] ?? null, actives[1] ?? null] as GameState['martialLoadout']['activeIds'],
+    activeIds: [
+      actives[0] ?? null,
+      actives[1] ?? null,
+      actives[2] ?? null,
+      actives[3] ?? null,
+    ] as GameState['martialLoadout']['activeIds'],
   }
   const equipped = { ...state.equipped }
   // 同槽位選精煉較高／稀有度較後獲得者覆蓋
@@ -344,22 +380,30 @@ function runCombat(
   }
   const reward = banditWinRewards(state.banditFightsThisXun)
   const player = combat.allies.find((a) => a.isPlayer)
-  return {
-    win: true,
-    state: {
-      ...state,
-      combatLoseStreak: 0,
-      stats: {
-        ...state.stats,
-        hp: Math.max(1, Math.min(state.stats.maxHp, player?.hp ?? state.stats.hp)),
-      },
-      currency: {
-        ...state.currency,
-        silver: state.currency.silver + reward.silver + mods.banditSilverFlat,
-      },
-      potential: state.potential + reward.potential,
+  let next: GameState = {
+    ...state,
+    combatLoseStreak: 0,
+    lifetimeBanditWins: (state.lifetimeBanditWins ?? 0) + 1,
+    stats: {
+      ...state.stats,
+      hp: Math.max(1, Math.min(state.stats.maxHp, player?.hp ?? state.stats.hp)),
     },
+    currency: {
+      ...state.currency,
+      silver: state.currency.silver + reward.silver + mods.banditSilverFlat,
+    },
+    potential: state.potential + reward.potential,
   }
+  // 勝仗掉落冷門招（與實機一致偏高）
+  if (rng() < 0.4) {
+    const pool = [...COLD_MARTIAL_IDS]
+    const unknown = pool.filter((id) => (next.martialProgress[id] ?? 0) <= 0)
+    if (unknown.length) {
+      const mid = pick(rng, unknown)
+      next = grantMartialArts(next, [mid]).state
+    }
+  }
+  return { win: true, state: autoEquip(next) }
 }
 
 function stepXun(state: GameState, rng: () => number): GameState {
@@ -424,7 +468,7 @@ function stepTravel(state: GameState, rng: () => number): GameState {
           ? 'night'
           : 'dawn'
   const fromNight = state.time.period === 'night'
-  return {
+  let next: GameState = {
     ...state,
     locationId: target.id,
     locationName: target.name,
@@ -439,6 +483,17 @@ function stepTravel(state: GameState, rng: () => number): GameState {
       ? applyNightTravelApRestore(state.actionPoints, state.maxActionPoints)
       : state.actionPoints,
   }
+  // 初訪書冊
+  if (!state.knownLocationIds.includes(target.id)) {
+    const pool = LOCATION_MARTIAL_FINDS[target.id]
+    if (pool && rng() < 0.72) {
+      const unknown = pool.filter((id) => (next.martialProgress[id] ?? 0) <= 0)
+      if (unknown.length) {
+        next = grantMartialArts(next, [pick(rng, unknown)]).state
+      }
+    }
+  }
+  return autoEquip(next)
 }
 
 function stepEvent(
@@ -508,15 +563,20 @@ function stepTrain(state: GameState, rng: () => number): GameState {
     return canProgressMartial(state, m.id, { learning: false }).ok
   })
   if (!candidates.length) return state
-  const art = pick(rng, candidates)
+  // 六成偏好冷門／非開局
+  const cold = candidates.filter((m) =>
+    (COLD_MARTIAL_IDS as readonly string[]).includes(m.id),
+  )
+  const art =
+    cold.length && rng() < 0.6 ? pick(rng, cold) : pick(rng, candidates)
   const lv = state.martialProgress[art.id] ?? 0
   if (lv <= 0) {
     if (state.potential < 5) return state
-    return autoEquip({
-      ...state,
-      potential: state.potential - 5,
-      martialProgress: { ...state.martialProgress, [art.id]: 1 },
-    })
+    const granted = grantMartialArts(
+      { ...state, potential: state.potential - 5 },
+      [art.id],
+    )
+    return autoEquip(granted.state)
   }
   const cost = trainPotentialCost(lv)
   if (state.potential < cost) return state
@@ -652,12 +712,12 @@ function styleWeights(style: Style): Record<string, number> {
   switch (style) {
     case 'main':
       return {
-        xun: 38,
-        travel: 10,
-        bandit: 8,
-        train: 8,
-        sect: 6,
-        hero: 6,
+        xun: 28,
+        travel: 12,
+        bandit: 14,
+        train: 10,
+        sect: 4,
+        hero: 14,
         gather: 4,
         gacha: 6,
       }
@@ -735,6 +795,11 @@ function snapshot(state: GameState, c: { wins: number; losses: number }, steps: 
     if (typeof v === 'string') routes[k] = v
   }
   const mods = computeDifficultyMods(state)
+  const path = computeJourneyProfile(state)
+  const ending =
+    typeof state.flags.ending_branch === 'string'
+      ? state.flags.ending_branch
+      : null
   return {
     martialLearned: Object.keys(state.martialProgress).filter(
       (id) => (state.martialProgress[id] ?? 0) > 0,
@@ -752,6 +817,11 @@ function snapshot(state: GameState, c: { wins: number; losses: number }, steps: 
     cleared: !!state.storyFlags['main_y5_wharf'] || canSettleNgPlus(state),
     enemyScaleEnd: mods.enemyScale,
     panelAtk: buildPlayerCombatant(state).atk,
+    pathTier: path.pathTier,
+    diversityScore: path.diversityScore,
+    endingBranch: ending,
+    coldMartialEquipped: path.coldMartialEquipped,
+    nonStarterEquipped: path.nonStarterEquipped,
   }
 }
 
@@ -1143,6 +1213,47 @@ function main() {
     (comboSorted.find((c) => c.id === 'full_stack')?.winRate ?? 0) -
     (trainedSolo?.winRate ?? 0)
 
+  const pathTierCounts: Record<string, number> = {}
+  const endingCounts: Record<string, number> = {}
+  const pathTierAll: Record<string, number> = {}
+  let sumDiversity = 0
+  let sumColdEquip = 0
+  for (const s of snaps) {
+    pathTierAll[s.pathTier] = (pathTierAll[s.pathTier] ?? 0) + 1
+  }
+  for (const s of cleared) {
+    pathTierCounts[s.pathTier] = (pathTierCounts[s.pathTier] ?? 0) + 1
+    const eb = s.endingBranch ?? 'unknown'
+    endingCounts[eb] = (endingCounts[eb] ?? 0) + 1
+    sumDiversity += s.diversityScore
+    sumColdEquip += s.coldMartialEquipped
+  }
+  for (const s of snaps.filter((x) => !x.cleared)) {
+    endingCounts['blocked_or_unfinished'] =
+      (endingCounts['blocked_or_unfinished'] ?? 0) + 1
+  }
+
+  const coldMartialRates = [...COLD_MARTIAL_IDS].map((id) => {
+    const count = martialEquip.get(id) ?? 0
+    return {
+      id,
+      name: nameMartial(id),
+      rate: Math.round((count / clearN) * 1000) / 10,
+      baseline: BASELINE.coldRates[id] ?? null,
+    }
+  })
+  const coldSectRates = [...COLD_SECT_IDS].map((id) => {
+    const count = sectJoin.get(id) ?? 0
+    return {
+      id,
+      name: nameSect(id),
+      rate: Math.round((count / clearN) * 1000) / 10,
+      baseline: BASELINE.coldRates[id] ?? null,
+    }
+  })
+
+  const clearRate = Math.round((cleared.length / totalN) * 1000) / 10
+
   const payload = {
     generatedAt: new Date().toISOString(),
     meta: {
@@ -1150,7 +1261,7 @@ function main() {
       runsPerPersona: RUNS_PER,
       totalRuns: totalN,
       cleared: cleared.length,
-      clearRate: Math.round((cleared.length / totalN) * 1000) / 10,
+      clearRate,
       pools: {
         martial: martialIds.length,
         equip: equipIds.length,
@@ -1158,6 +1269,25 @@ function main() {
         npc: npcIds.length,
       },
       avgCombatWinRateOnClear: avgClearWin,
+      avgDiversityScore:
+        cleared.length
+          ? Math.round((sumDiversity / cleared.length) * 10) / 10
+          : 0,
+      avgColdMartialEquipped:
+        cleared.length
+          ? Math.round((sumColdEquip / cleared.length) * 10) / 10
+          : 0,
+      pathTierCounts,
+      pathTierAllRuns: pathTierAll,
+      endingBranchCounts: endingCounts,
+    },
+    beforeAfter: {
+      baselineClearRate: BASELINE.clearRate,
+      clearRate,
+      baselineMartialNearUnused: BASELINE.martialNearUnused,
+      martialNearUnused: deadMartial.length,
+      coldMartialRates,
+      coldSectRates,
     },
     deadContent: {
       martialEquipRateLt5: deadMartial,
@@ -1214,17 +1344,15 @@ function main() {
       partyVsTrainedSolo: partyVsTrained,
       partyTiltYear1: (partyY1?.winRate ?? 0) - (soloY1?.winRate ?? 0),
       overpoweredCombo: earlyPartyOp,
-      storySkipCombatStillEasy: true,
-      p0FixedThisRound: [
-        '路遇敵方依隊友相對臨時幫手的攻擊溢出抬升（上限約 ×1.22）',
-        '隊友基礎面板／ROLE_BONUS 微削',
-      ],
-      p0FixNeeded: false,
+      clearRateDropped: clearRate < BASELINE.clearRate - 5,
+      coldUsageImproved: coldMartialRates.some(
+        (r) => r.baseline != null && r.rate > (r.baseline as number) + 5,
+      ),
+      pathForkVisible: Object.keys(endingCounts).length >= 2,
       notes: [
-        '通關不依賴戰鬥勝負（事件戰敗不回溯），故「穩贏通關」主因仍是推旬節奏而非單場碾壓。',
-        '武學死內容以「通關當下配置率」計（非僅學過）；開局五招排除。',
-        '高修門派配置勝率高＝養成回報，非無成本漏洞；雙隊友已不再相對臨時幫手近乎免費穩贏。',
-        '建議改：提高冷門武學／門派／NPC 露出；不建議改：敘事通關不強制戰鬥全勝。',
+        '結局閘需旅程投入（入派／組隊／勝仗／非開局招），空轉點敘事無法 99% 通關。',
+        '新學自動占空欄／替換開局招；冷門掉落池加重。',
+        '結局分支：空舟／刀光／並肩／門牆。',
       ],
     },
   }
@@ -1239,7 +1367,9 @@ function main() {
       {
         clearRate: payload.meta.clearRate,
         dead: payload.deadContent.summary,
-        opCombos: payload.winTilt.opCombos,
+        pathTier: payload.meta.pathTierCounts,
+        endings: payload.meta.endingBranchCounts,
+        beforeAfterCold: payload.beforeAfter.coldMartialRates.slice(0, 8),
         verdict: payload.verdict,
       },
       null,

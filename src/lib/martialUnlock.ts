@@ -1,6 +1,7 @@
 import { getMartialById } from '../data/martialArts'
 import { getMartialGate } from '../data/martialGates'
 import { canProgressMartial } from './martialGates'
+import { preferEquipLearnedArts } from './journeyPath'
 import type { GameState, MartialLoadout } from '../types/game'
 
 function stripFromLoadout(loadout: MartialLoadout, artId: string): MartialLoadout {
@@ -78,9 +79,21 @@ export const LOCATION_MARTIAL_FINDS: Record<string, string[]> = {
   loc_snow_ridge: ['ma_qing_snow', 'ma_qing_yanmen', 'ma_act_blood_sword'],
 }
 
-/** 戰鬥勝利可能掉落的招式（非開局那五招） */
+/** 戰鬥勝利可能掉落的招式（加重冷門鏈，降低開局五招永遠占滿） */
 export const COMBAT_MARTIAL_POOL = [
+  'ma_qing_icefire',
+  'ma_qing_tomb',
+  'ma_act_xuantie',
+  'ma_qing_emei',
+  'ma_act_emei_sword',
+  'ma_act_needle',
   'ma_act_xiangyang',
+  'ma_jiuyang',
+  'ma_kuiying',
+  'ma_mingjiao_fire',
+  'ma_qing_huashan',
+  'ma_act_lonely',
+  'ma_heart_yue',
   'ma_act_first_aid',
   'ma_qing_swallow',
   'ma_qing_yanmen',
@@ -95,6 +108,8 @@ export const COMBAT_MARTIAL_POOL = [
   'ma_qing_snow',
   'ma_heart_liancheng',
   'ma_act_blood_sword',
+  'ma_beiming',
+  'ma_gumupo_jade',
 ] as const
 
 export function grantMartialArts(
@@ -150,6 +165,8 @@ export function grantMartialArts(
     learned.push(id)
   }
   if (!learned.length) return { state, learned, blocked, converted }
+  // 新學自動擠進空欄／替換開局招，讓冷門招有配置誘因
+  cursor = preferEquipLearnedArts(cursor, learned)
   return { state: cursor, learned, blocked, converted }
 }
 

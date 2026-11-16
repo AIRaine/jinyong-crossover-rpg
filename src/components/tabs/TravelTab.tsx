@@ -7,6 +7,10 @@ import {
 } from '../../data/storyArcs'
 import { ensureStoryRoute } from '../../lib/storyProgress'
 import {
+  computeJourneyProfile,
+  effectiveBeatCooldown,
+} from '../../lib/journeyPath'
+import {
   getLocationById,
   LOCATION_KIND_LABEL,
 } from '../../data/locations'
@@ -126,10 +130,9 @@ export function TravelTab({
   const mainLoc = pendingArc?.locationId
     ? getLocationById(pendingArc.locationId)
     : null
-  const coolLeft = Math.max(
-    0,
-    STORY_BEAT_COOLDOWN_XUN - routed.xunsSinceLastBeat,
-  )
+  const beatNeed = effectiveBeatCooldown(routed, STORY_BEAT_COOLDOWN_XUN)
+  const pathBrief = computeJourneyProfile(routed)
+  const coolLeft = Math.max(0, beatNeed - routed.xunsSinceLastBeat)
   const guideTips = farTravelHints(state.knownLocationIds)
   const weeklyGoals = routed.weekly.goals
   const fightBlock = getBanditStartBlock(state)
@@ -209,8 +212,14 @@ export function TravelTab({
             {coolLeft > 0 && (
               <p className="mt-1 text-paper/45">
                 下一段節拍約需再推 {coolLeft} 旬
+                {pathBrief.pathTier === 'hollow' ? '（空轉較慢）' : ''}
               </p>
             )}
+            <p className="mt-1 text-[11px] text-amber-200/60">
+              旅程 {pathBrief.diversityScore}｜
+              {pathBrief.labels.slice(0, 3).join('·') || '尚無痕跡'}
+              {pathBrief.finaleEngaged ? '' : '｜潮信尚需入派／同伴／勝仗或非開局招'}
+            </p>
           </div>
         )}
         {pendingArc && (

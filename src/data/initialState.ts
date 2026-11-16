@@ -150,6 +150,7 @@ export function createInitialGameState(): GameState {
     ngPlusReady: false,
     combatLoseStreak: 0,
     banditFightsThisXun: 0,
+    lifetimeBanditWins: 0,
     sparFightsThisXun: 0,
     travelPassCharges: 0,
     paidAtkBonus: 0,

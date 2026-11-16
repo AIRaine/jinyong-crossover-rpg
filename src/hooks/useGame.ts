@@ -409,9 +409,10 @@ export function useGame() {
       // 初訪過冷秘境：機率發現武學書冊
       let martialNote = ''
       let martialProgress = state.martialProgress
+      let martialLoadoutTravel = state.martialLoadout
       if (!state.knownLocationIds.includes(target.id)) {
         const pool = LOCATION_MARTIAL_FINDS[target.id]
-        if (pool && Math.random() < 0.55) {
+        if (pool && Math.random() < 0.72) {
           const id = pickUnknownMartial(
             { ...state, martialProgress },
             pool,
@@ -422,6 +423,7 @@ export function useGame() {
               [id],
             )
             martialProgress = granted.state.martialProgress
+            martialLoadoutTravel = granted.state.martialLoadout
             const art = getMartialById(id)
             if (art) martialNote = `｜發現書冊「${art.name}」`
           }
@@ -442,6 +444,7 @@ export function useGame() {
         locationName: target.name,
         knownLocationIds: [...known],
         martialProgress,
+        martialLoadout: martialLoadoutTravel,
         travelPassCharges: usePass
           ? Math.max(0, cleared.travelPassCharges - 1)
           : cleared.travelPassCharges,
@@ -1442,11 +1445,18 @@ export function useGame() {
           const potGain = banditReward.potential
           let martialProgress = state.martialProgress
           let martialNote = ''
-          if (!isSpar && Math.random() < 0.28) {
+          let martialLoadout = state.martialLoadout
+          // 空轉旅程提高掉落率，逼出非開局招
+          const dropChance =
+            (state.lifetimeBanditWins ?? 0) < 3
+              ? 0.48
+              : 0.32
+          if (!isSpar && Math.random() < dropChance) {
             const mid = pickUnknownMartial(state, [...COMBAT_MARTIAL_POOL])
             if (mid) {
               const granted = grantMartialArts(state, [mid])
               martialProgress = granted.state.martialProgress
+              martialLoadout = granted.state.martialLoadout
               const art = getMartialById(mid)
               if (art) martialNote = `、武學「${art.name}」`
             }
@@ -1459,7 +1469,10 @@ export function useGame() {
           persist({
             ...state,
             martialProgress,
+            martialLoadout,
             combatLoseStreak: 0,
+            lifetimeBanditWins:
+              (state.lifetimeBanditWins ?? 0) + (isSpar || isEvent ? 0 : 1),
             stats: {
               ...state.stats,
               hp: Math.max(1, Math.min(state.stats.maxHp, hp)),

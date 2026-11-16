@@ -1,5 +1,5 @@
 /** 存檔結構版本；變更欄位時遞增並在 migrateSaveData 處理 */
-export const SAVE_VERSION = 11 as const
+export const SAVE_VERSION = 12 as const
 
 /** 底部分頁 */
 export type TabId =
@@ -540,6 +540,8 @@ export interface GameState {
   combatLoseStreak: number
   /** 本旬已開戰路遇次數（推進旬制歸零） */
   banditFightsThisXun: number
+  /** 累計路遇勝場（旅程品質／結局閘） */
+  lifetimeBanditWins: number
   /** 本旬已開戰切磋次數（推進旬制歸零） */
   sparFightsThisXun: number
   /** 遊歷通票：之後若干次移動減半精力 */

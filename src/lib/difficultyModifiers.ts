@@ -2,6 +2,7 @@
  * 門派／招式樹／故事路線 → 可量化戰鬥／資源修飾。
  */
 import { getMartialGate } from '../data/martialGates'
+import { computeJourneyProfile } from './journeyPath'
 import { getSectRule, type SectCombatProfile } from './sectRules'
 import type { GameFlags, GameState } from '../types/game'
 
@@ -118,21 +119,41 @@ function treeDepthMods(state: GameState): Pick<
   return { skillPowerFlat: 0, enemyScale: 1, labels }
 }
 
+function pathDiversityMods(state: GameState): {
+  skillPowerFlat: number
+  atkFlat: number
+  labels: string[]
+} {
+  const p = computeJourneyProfile(state)
+  if (p.pathTier === 'forged') {
+    return { skillPowerFlat: 0.04, atkFlat: 2, labels: p.labels }
+  }
+  if (p.pathTier === 'walked') {
+    return { skillPowerFlat: 0.02, atkFlat: 1, labels: p.labels }
+  }
+  return { skillPowerFlat: 0, atkFlat: 0, labels: p.labels }
+}
+
 export function computeDifficultyMods(state: GameState): DifficultyMods {
   const sect = state.sectId ? getSectRule(state.sectId)?.combat : undefined
   const profile = sect ?? NEUTRAL
   const route = routeMods(state.flags ?? {})
   const tree = treeDepthMods(state)
+  const path = pathDiversityMods(state)
   const labels = [
     ...(state.sectId ? [`門派·${state.sectId}`] : ['門派·無']),
     ...route.labels,
     ...tree.labels,
+    ...path.labels,
   ]
   return {
-    atkFlat: profile.atkFlat + route.atkFlat,
+    atkFlat: profile.atkFlat + route.atkFlat + path.atkFlat,
     defFlat: profile.defFlat,
     skillPowerFlat:
-      profile.skillPowerFlat + route.skillPowerFlat + tree.skillPowerFlat,
+      profile.skillPowerFlat +
+      route.skillPowerFlat +
+      tree.skillPowerFlat +
+      path.skillPowerFlat,
     enemyScale: profile.enemyScale * route.enemyScale * tree.enemyScale,
     banditSilverFlat: profile.banditSilverFlat + route.banditSilverFlat,
     labels,
