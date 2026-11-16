@@ -1,3 +1,4 @@
+import { useMemo, useState } from 'react'
 import { ALCHEMY_RECIPES, MATERIAL_IDS } from '../../data/alchemy'
 import { farTravelHints, XUN_LABELS } from '../../data/events'
 import {
@@ -164,6 +165,82 @@ export function TravelTab({
     return `路遇（${BANDIT_FIGHT_AP_COST} AP）`
   })()
 
+  const [showAllMaps, setShowAllMaps] = useState(false)
+
+  const quickDestinations = useMemo(() => {
+    const picks: LocationDef[] = []
+    if (mainLoc && mainLoc.id !== state.locationId) picks.push(mainLoc)
+    for (const loc of linkedLocations) {
+      if (picks.some((p) => p.id === loc.id)) continue
+      picks.push(loc)
+      if (picks.length >= 4) break
+    }
+    return picks
+  }, [linkedLocations, mainLoc, state.locationId])
+
+  const travelCost = (loc: LocationDef) =>
+    state.travelPassCharges > 0
+      ? Math.max(1, Math.ceil(loc.travelStamina / 2))
+      : loc.travelStamina
+
+  const renderDestinationButton = (loc: LocationDef, compact = false) => {
+    const known = state.knownLocationIds.includes(loc.id)
+    const cost = travelCost(loc)
+    const canGo = state.stats.stamina >= cost
+    const isClue = mainLoc?.id === loc.id
+    if (compact) {
+      return (
+        <button
+          key={`q-${loc.id}`}
+          type="button"
+          onClick={() => onTravel(loc.id)}
+          disabled={!canGo}
+          className="touch-btn rounded-lg border border-teal-800/45 bg-teal-950/40 px-2 py-2 text-left disabled:opacity-40"
+        >
+          <span className="block text-[11px] leading-snug text-teal-50">
+            {isClue ? '線索·' : ''}
+            {loc.name}
+            {!known ? '·初' : ''}
+          </span>
+          <span className="mt-0.5 block text-[10px] text-teal-100/60">
+            {cost} 精力
+          </span>
+        </button>
+      )
+    }
+    const farHint = loc.kind === 'secret' && !known ? ' · 建議一探' : ''
+    return (
+      <button
+        key={loc.id}
+        type="button"
+        onClick={() => onTravel(loc.id)}
+        className="touch-btn flex w-full items-center justify-between gap-3 rounded-xl border border-paper/15 bg-ink-900/90 px-4 py-3.5 text-left active:scale-[0.99]"
+      >
+        <span>
+          <span className="block text-sm font-medium text-paper">
+            {isClue ? '【線索】' : ''}
+            {loc.name}
+            {!known ? '（初探）' : ''}
+          </span>
+          <span className="mt-0.5 block text-[11px] text-paper/50">
+            {LOCATION_KIND_LABEL[loc.kind]} · {loc.region}
+            {farHint}
+          </span>
+        </span>
+        <span
+          className={`shrink-0 rounded-lg px-2.5 py-1 text-xs ${
+            canGo
+              ? 'bg-teal-900/50 text-teal-100'
+              : 'bg-rose-950/50 text-rose-200'
+          }`}
+        >
+          耗 {cost} 精力
+          {state.travelPassCharges > 0 ? '（通票）' : ''}
+        </span>
+      </button>
+    )
+  }
+
   return (
     <section className="space-y-4 text-left">
       <div className="rounded-2xl border border-paper/10 bg-ink-900/70 p-4">
@@ -183,67 +260,16 @@ export function TravelTab({
         <p className="mt-2 text-sm leading-7 text-paper/85">
           {current?.description ?? '你站在陌生的路口。'}
         </p>
-        <div className="mt-3 space-y-2 rounded-lg bg-ink-950/50 px-3 py-2 ring-1 ring-paper/10">
-          <p className="text-[11px] tracking-wide text-cinnabar-soft">
-            日登／本週・{seasonalModifier().label}
-          </p>
-          <button
-            type="button"
-            onClick={onClaimDaily}
-            className="touch-btn w-full rounded-lg border border-teal-800/50 bg-teal-950/40 px-3 py-2 text-left text-xs text-teal-50"
-          >
-            領取今日登入（季節加成・連登有獎）
-          </button>
-          <ul className="space-y-1.5">
-            {weeklyGoals.map((g) => (
-              <li
-                key={g.id}
-                className="flex items-center justify-between gap-2 text-[11px] text-paper/80"
-              >
-                <span>
-                  {g.title}（{g.progress}/{g.target}）
-                </span>
-                <button
-                  type="button"
-                  disabled={g.claimed || g.progress < g.target}
-                  onClick={() => onClaimWeekly(g.id)}
-                  className="touch-btn shrink-0 rounded-md border border-paper/20 px-2 py-1 disabled:opacity-40"
-                >
-                  {g.claimed ? '已領' : '領獎'}
-                </button>
-              </li>
-            ))}
-          </ul>
-        </div>
-        {arcRows.length > 0 && (
-          <div className="mt-3 rounded-lg bg-ink-950/50 px-3 py-2 text-[11px] leading-relaxed text-paper/75 ring-1 ring-paper/10">
-            <p className="text-cinnabar-soft">進行中故事弧</p>
-            <ul className="mt-1 space-y-1">
-              {arcRows.map((row) => (
-                <li key={`${row.arcTitle}-${row.beatTitle}`}>
-                  {row.arcTitle} · {row.beatTitle}
-                  {row.done ? '（已了）' : '（未了）'}
-                </li>
-              ))}
-            </ul>
-            {coolLeft > 0 && (
-              <p className="mt-1 text-paper/45">
-                下一段節拍約需再推 {coolLeft} 旬
-                {pathBrief.pathTier === 'hollow' ? '（空轉較慢）' : ''}
-              </p>
-            )}
-            <p className="mt-1 text-[11px] text-amber-200/60">
+        {state.prologueDone && (
+          <div className="mt-3 rounded-lg bg-ink-950/50 px-3 py-2 text-[11px] leading-relaxed ring-1 ring-paper/10">
+            <p className="text-amber-200/70">
               旅程 {pathBrief.diversityScore}｜
               {pathBrief.labels.slice(0, 3).join('·') || '尚無痕跡'}
               {pathBrief.finaleEngaged
                 ? ''
                 : '｜潮信需戰績＋養成深度（非只入派）'}
             </p>
-          </div>
-        )}
-        {state.prologueDone && (
-          <div className="mt-3 rounded-lg bg-ink-950/50 px-3 py-2 text-[11px] leading-relaxed ring-1 ring-paper/10">
-            <p className="text-teal-100/80">
+            <p className="mt-1 text-teal-100/80">
               {growthBrief.stageLabel}｜養成 {growthBrief.cultivationScore}/
               {growthBrief.expectedForYear}｜
               {growthBrief.labels.slice(0, 2).join('·')}｜敵勢×
@@ -344,6 +370,40 @@ export function TravelTab({
               </span>
             )}
           </button>
+        </div>
+
+        <div className="mt-3 rounded-lg bg-ink-950/55 px-3 py-2 ring-1 ring-paper/10">
+          <div className="flex items-center justify-between gap-2">
+            <p className="text-[11px] tracking-wide text-cinnabar-soft">
+              導航・快速移動
+            </p>
+            <button
+              type="button"
+              onClick={() => setShowAllMaps((v) => !v)}
+              className="touch-btn rounded-md border border-paper/20 px-2 py-1 text-[10px] text-paper/75"
+            >
+              {showAllMaps ? '收合地圖' : '全部地圖'}
+            </button>
+          </div>
+          <p className="mt-0.5 text-[10px] text-paper/45">
+            夜間出發至破曉：AP +1（上限內）。主要 AP 靠推進一旬。
+          </p>
+          {quickDestinations.length === 0 ? (
+            <p className="mt-2 text-[11px] text-paper/45">此處暫無通路。</p>
+          ) : (
+            <div className="mt-2 grid grid-cols-2 gap-1.5">
+              {quickDestinations.map((loc) => renderDestinationButton(loc, true))}
+            </div>
+          )}
+          {showAllMaps && (
+            <div id="travel-destinations" className="mt-2 space-y-2 border-t border-paper/10 pt-2">
+              {linkedLocations.length === 0 ? (
+                <p className="text-center text-[11px] text-paper/45">此處暫無通路。</p>
+              ) : (
+                linkedLocations.map((loc) => renderDestinationButton(loc, false))
+              )}
+            </div>
+          )}
         </div>
       </div>
 
@@ -523,56 +583,61 @@ export function TravelTab({
         </div>
       </div>
 
-      <div className="space-y-2">
-        <h3 className="font-display text-sm text-paper/80">可前往</h3>
-        <p className="text-[11px] text-paper/45">
-          夜間出發至破曉：AP +1（上限內），不會回滿。主要 AP 靠推進一旬。
-        </p>
-        {linkedLocations.length === 0 ? (
-          <p className="rounded-xl border border-dashed border-paper/20 px-4 py-6 text-center text-sm text-paper/45">
-            此處暫無通路。
+      <div className="space-y-3 rounded-2xl border border-paper/10 bg-ink-900/70 p-4">
+        <div className="space-y-2 rounded-lg bg-ink-950/50 px-3 py-2 ring-1 ring-paper/10">
+          <p className="text-[11px] tracking-wide text-cinnabar-soft">
+            今日任務・{seasonalModifier().label}
           </p>
-        ) : (
-          linkedLocations.map((loc) => {
-            const known = state.knownLocationIds.includes(loc.id)
-            const cost =
-              state.travelPassCharges > 0
-                ? Math.max(1, Math.ceil(loc.travelStamina / 2))
-                : loc.travelStamina
-            const canGo = state.stats.stamina >= cost
-            const farHint =
-              loc.kind === 'secret' && !known ? ' · 建議一探' : ''
-            return (
-              <button
-                key={loc.id}
-                type="button"
-                onClick={() => onTravel(loc.id)}
-                className="touch-btn flex w-full items-center justify-between gap-3 rounded-xl border border-paper/15 bg-ink-900/90 px-4 py-3.5 text-left active:scale-[0.99]"
+          <button
+            type="button"
+            onClick={onClaimDaily}
+            className="touch-btn w-full rounded-lg border border-teal-800/50 bg-teal-950/40 px-3 py-2 text-left text-xs text-teal-50"
+          >
+            領取今日登入（季節加成・連登有獎）
+          </button>
+          <ul className="space-y-1.5">
+            {weeklyGoals.map((g) => (
+              <li
+                key={g.id}
+                className="flex items-center justify-between gap-2 text-[11px] text-paper/80"
               >
                 <span>
-                  <span className="block text-sm font-medium text-paper">
-                    {loc.name}
-                    {!known ? '（初探）' : ''}
-                  </span>
-                  <span className="mt-0.5 block text-[11px] text-paper/50">
-                    {LOCATION_KIND_LABEL[loc.kind]} · {loc.region}
-                    {farHint}
-                  </span>
+                  {g.title}（{g.progress}/{g.target}）
                 </span>
-                <span
-                  className={`shrink-0 rounded-lg px-2.5 py-1 text-xs ${
-                    canGo
-                      ? 'bg-teal-900/50 text-teal-100'
-                      : 'bg-rose-950/50 text-rose-200'
-                  }`}
+                <button
+                  type="button"
+                  disabled={g.claimed || g.progress < g.target}
+                  onClick={() => onClaimWeekly(g.id)}
+                  className="touch-btn shrink-0 rounded-md border border-paper/20 px-2 py-1 disabled:opacity-40"
                 >
-                  耗 {cost} 精力
-                  {state.travelPassCharges > 0 ? '（通票）' : ''}
-                </span>
-              </button>
-            )
-          })
-        )}
+                  {g.claimed ? '已領' : '領獎'}
+                </button>
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        <div className="rounded-lg bg-ink-950/50 px-3 py-2 text-[11px] leading-relaxed text-paper/75 ring-1 ring-paper/10">
+          <p className="text-cinnabar-soft">進行中故事弧</p>
+          {arcRows.length === 0 ? (
+            <p className="mt-1 text-paper/45">目前沒有進行中的故事弧。</p>
+          ) : (
+            <ul className="mt-1 space-y-1">
+              {arcRows.map((row) => (
+                <li key={`${row.arcTitle}-${row.beatTitle}`}>
+                  {row.arcTitle} · {row.beatTitle}
+                  {row.done ? '（已了）' : '（未了）'}
+                </li>
+              ))}
+            </ul>
+          )}
+          {coolLeft > 0 && (
+            <p className="mt-1 text-paper/45">
+              下一段節拍約需再推 {coolLeft} 旬
+              {pathBrief.pathTier === 'hollow' ? '（空轉較慢）' : ''}
+            </p>
+          )}
+        </div>
       </div>
     </section>
   )
