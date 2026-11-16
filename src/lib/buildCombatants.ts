@@ -9,6 +9,23 @@ const ROLE_BONUS = {
   support: { hp: 10, atk: 4, def: 5 },
 } as const
 
+/**
+ * 絕招倍率：配置武學等級越高越強。
+ * 鼓勵玩家研究科技樹／修練與欄位配置，而非只連點普攻。
+ */
+export function computeSkillPower(state: GameState): number {
+  const load = state.martialLoadout
+  const lvOf = (id: string | null | undefined) =>
+    id ? Math.max(0, state.martialProgress[id] ?? 0) : 0
+  let levels = 0
+  levels += lvOf(load.internalId)
+  levels += lvOf(load.heartId)
+  levels += lvOf(load.qinggongId)
+  for (const id of load.activeIds) levels += lvOf(id)
+  // 起步約 1.32；認真修練可逼近 1.75
+  return Math.max(1.2, Math.min(1.75, 1.2 + levels * 0.028))
+}
+
 export function buildPlayerCombatant(
   state: GameState,
 ): Omit<CombatFighter, 'side' | 'status' | 'poisonTurns' | 'stunned'> {
@@ -22,6 +39,7 @@ export function buildPlayerCombatant(
     def: panel.defense,
     internal: Math.max(10, panel.internalForce),
     isPlayer: true,
+    skillPower: computeSkillPower(state),
   }
 }
 

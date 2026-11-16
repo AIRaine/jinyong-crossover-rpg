@@ -73,6 +73,9 @@ export function CombatModal({ combat, onAct, onClose }: CombatModalProps) {
       <div className="shrink-0 border-b border-cinnabar/30 px-3 py-3 text-center">
         <p className="text-[11px] tracking-[0.2em] text-cinnabar-soft">三對三戰局</p>
         <h2 className="font-display text-lg text-paper">第 {combat.turn} 回合</h2>
+        <p className="mt-1 text-[10px] leading-snug text-paper/55">
+          低血先急救／防禦；絕招力道隨武學配置與修練提升。
+        </p>
         {playerDown && !combat.finished && (
           <p className="mt-1 text-xs text-rose-200">你已無法作戰——請結束此戰。</p>
         )}
@@ -146,7 +149,7 @@ export function CombatModal({ combat, onAct, onClose }: CombatModalProps) {
             onClick={() => onAct('skill', targetId)}
             className="touch-btn rounded-xl bg-amber-900/70 py-3 text-sm text-amber-50"
           >
-            絕招（可上毒）
+            絕招（配置越強越痛）
           </button>
           <button
             type="button"

@@ -69,6 +69,8 @@ import {
   BANDIT_FIGHTS_PER_XUN_MAX,
   banditWinRewards,
   clearCombatLoseStreak,
+  EVENT_COMBAT_WIN_POTENTIAL,
+  EVENT_COMBAT_WIN_SILVER,
   getBanditStartBlock,
 } from '../lib/banditEncounterRules'
 import {
@@ -125,7 +127,7 @@ import {
   type TabId,
 } from '../types/game'
 
-type CombatKind = 'bandit' | 'spar'
+type CombatKind = 'bandit' | 'spar' | 'event'
 
 function mergeItem(
   inventory: InventoryItem[],
@@ -1382,6 +1384,7 @@ export function useGame() {
       setCombat(next)
       if (next.finished) {
         const isSpar = combatKind === 'spar'
+        const isEvent = combatKind === 'event'
         if (next.victory) {
           const player = next.allies.find((a) => a.isPlayer)
           const hp = player?.hp ?? state.stats.hp
@@ -1391,7 +1394,13 @@ export function useGame() {
                 potential: SPAR_WIN_POTENTIAL,
                 decayed: false,
               }
-            : banditWinRewards(state.banditFightsThisXun)
+            : isEvent
+              ? {
+                  silver: EVENT_COMBAT_WIN_SILVER,
+                  potential: EVENT_COMBAT_WIN_POTENTIAL,
+                  decayed: false,
+                }
+              : banditWinRewards(state.banditFightsThisXun)
           const silverGain = banditReward.silver
           const potGain = banditReward.potential
           let martialProgress = state.martialProgress
@@ -1406,7 +1415,10 @@ export function useGame() {
             }
           }
           const decayNote =
-            !isSpar && banditReward.decayed ? '（本旬獎勵已衰減）' : ''
+            !isSpar && !isEvent && banditReward.decayed
+              ? '（本旬獎勵已衰減）'
+              : ''
+          const eventNote = isEvent ? '（事件戰勝場加碼）' : ''
           persist({
             ...state,
             martialProgress,
@@ -1423,16 +1435,20 @@ export function useGame() {
             sparWins: state.sparWins + (isSpar ? 1 : 0),
             lastCombatResult: {
               victory: true,
-              summary: isSpar ? '切磋勝利。' : '三對三戰局勝利。',
+              summary: isSpar
+                ? '切磋勝利。'
+                : isEvent
+                  ? '事件戰勝利。'
+                  : '三對三戰局勝利。',
               rewardsNote: isSpar
                 ? `銀兩 +${silverGain}、潛能 +${potGain}、切磋勝場 +1`
-                : `銀兩 +${silverGain}、潛能 +${potGain}${martialNote}${decayNote}`,
+                : `銀兩 +${silverGain}、潛能 +${potGain}${martialNote}${decayNote}${eventNote}`,
             },
           })
           showToast(
             isSpar
               ? `切磋勝利：銀兩 +${silverGain}、潛能 +${potGain}`
-              : `戰鬥勝利：銀兩 +${silverGain}、潛能 +${potGain}${martialNote}${decayNote}`,
+              : `戰鬥勝利：銀兩 +${silverGain}、潛能 +${potGain}${martialNote}${decayNote}${eventNote}`,
           )
         } else {
           const streak = state.combatLoseStreak + 1
@@ -1815,8 +1831,11 @@ export function useGame() {
 
       if (resolvedChoice.startCombat) {
         persist(next)
-        showToast(messages.join(' · ') || '事件了結，戰局開打')
-        setCombatKind('bandit')
+        showToast(
+          messages.join(' · ') ||
+            '事件已了結；戰局開打——勝可得加碼，敗不回溯劇情',
+        )
+        setCombatKind('event')
         const encounter = makeBanditEncounter(
           buildPlayerCombatant(next),
           buildPartyCombatants(next),
