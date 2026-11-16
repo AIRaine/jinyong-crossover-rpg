@@ -4,10 +4,11 @@ import { computeDifficultyMods } from './difficultyModifiers'
 import type { CombatFighter } from './combatEngine'
 import type { GameState } from '../types/game'
 
+/** 隊友加成：相對臨時幫手仍有感，但避免雙隊友直接碾壓路遇 */
 const ROLE_BONUS = {
-  tank: { hp: 25, atk: 2, def: 8 },
-  dps: { hp: 5, atk: 10, def: 2 },
-  support: { hp: 10, atk: 4, def: 5 },
+  tank: { hp: 20, atk: 2, def: 6 },
+  dps: { hp: 4, atk: 8, def: 1 },
+  support: { hp: 8, atk: 3, def: 4 },
 } as const
 
 /**
@@ -60,11 +61,11 @@ export function buildPartyCombatants(
     return {
       id,
       name: npc?.name ?? id,
-      hp: 50 + bonus.hp + Math.floor(aff / 5),
-      maxHp: 50 + bonus.hp + Math.floor(aff / 5),
-      atk: 10 + bonus.atk + Math.floor(panel.attack * 0.15),
-      def: 6 + bonus.def,
-      internal: 20 + Math.floor(aff / 4),
+      hp: 42 + bonus.hp + Math.floor(aff / 6),
+      maxHp: 42 + bonus.hp + Math.floor(aff / 6),
+      atk: 8 + bonus.atk + Math.floor(panel.attack * 0.12),
+      def: 5 + bonus.def,
+      internal: 16 + Math.floor(aff / 5),
     }
   })
 }
