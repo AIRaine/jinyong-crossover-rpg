@@ -14,7 +14,8 @@
     "sim:solid-play": "npx --yes tsx scripts/sim-solid-play.ts",
     "sim:pay-tier": "npx --yes tsx scripts/sim-pay-tier.ts",
     "sim:difficulty": "npx --yes tsx scripts/sim-difficulty-study.ts",
-    "sim:sect-route": "npx --yes tsx scripts/sim-sect-skill-route.ts"
+    "sim:sect-route": "npx --yes tsx scripts/sim-sect-skill-route.ts",
+    "sim:travel-ap": "npx --yes tsx scripts/sim-travel-ap.ts"
   },
   "dependencies": {
     "lucide-react": "^1.73.0",
