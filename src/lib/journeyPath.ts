@@ -5,6 +5,7 @@
  */
 import { getMartialById } from '../data/martialArts'
 import { finaleCombatCultivationOk } from './growthStage'
+import { finaleDualGateOk } from './renownAxis'
 import type { GameState, MartialLoadout } from '../types/game'
 
 export const STARTER_MARTIAL_IDS = [
@@ -135,8 +136,9 @@ export function computeJourneyProfile(state: GameState): JourneyProfile {
   if (partyCount > 0) labels.push(`同伴×${partyCount}`)
   if (combatWins > 0) labels.push(`路遇勝×${combatWins}`)
 
-  // 結局投入：須戰鬥／養成深度，不能只入派或只拉隊友
-  const finaleEngaged = finaleCombatCultivationOk(state)
+  // 結局投入：養成戰鬥閘 ∧ 潮信雙閘（話本碎片＋聲名）
+  const finaleEngaged =
+    finaleCombatCultivationOk(state) && finaleDualGateOk(state)
 
   let endingBranch: EndingBranch = 'hollow_tide'
   if (finaleEngaged && hasSect && (coldSect || nonStarterEquipped >= 2)) {

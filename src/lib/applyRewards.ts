@@ -6,6 +6,11 @@ import type {
   InventoryItem,
   Quest,
 } from '../types/game'
+import {
+  applyRouteAxisMarks,
+  clampAlignment,
+  clampRenown,
+} from './renownAxis'
 
 function clamp(n: number, min: number, max: number): number {
   return Math.max(min, Math.min(max, n))
@@ -127,6 +132,30 @@ export function applyRewards(
   }
   if (rewards.flags) {
     next.flags = { ...next.flags, ...rewards.flags }
+  }
+  if (typeof rewards.renownDelta === 'number' && rewards.renownDelta !== 0) {
+    const before = next.renown ?? 0
+    next.renown = clampRenown(before + rewards.renownDelta)
+    const applied = next.renown - before
+    if (applied !== 0) {
+      messages.push(`江湖聲名 ${applied > 0 ? '+' : ''}${applied}`)
+    }
+  }
+  if (
+    typeof rewards.alignmentDelta === 'number' &&
+    rewards.alignmentDelta !== 0
+  ) {
+    const before = next.alignment ?? 0
+    next.alignment = clampAlignment(before + rewards.alignmentDelta)
+    const applied = next.alignment - before
+    if (applied !== 0) {
+      messages.push(`正邪傾向 ${applied > 0 ? '+' : ''}${applied}`)
+    }
+  }
+  {
+    const axis = applyRouteAxisMarks(next)
+    next = axis.state
+    messages.push(...axis.notes)
   }
   if (rewards.items?.length) {
     next.inventory = mergeItems(next.inventory, rewards.items)

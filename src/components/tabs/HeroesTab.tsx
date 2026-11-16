@@ -1,6 +1,11 @@
 import { getLocationById } from '../../data/locations'
 import { ITEM_CATALOG, NPCS } from '../../data/npcs'
 import {
+  alignmentLabel,
+  canRecruitNpc,
+  renownLabel,
+} from '../../lib/renownAxis'
+import {
   COMBAT_ROLE_LABEL,
   type GameState,
 } from '../../types/game'
@@ -36,7 +41,7 @@ export function HeroesTab({
       <div className="rounded-2xl border border-paper/10 bg-ink-900/70 p-4">
         <h2 className="font-display text-xl text-paper">武林群英</h2>
         <p className="mt-1 text-xs leading-relaxed text-paper/55">
-          送禮增好感；好感足夠可入隊（最多 2 人）。可攻略角色好感滿 100 可結俠侶，獲雙修加成。
+          送禮增好感；入隊還看聲名、傾向與共事條件（最多 2 人）。婉拒時會說一句理由。可攻略角色好感滿 100 可結俠侶。
         </p>
         <p className="mt-2 text-[11px] text-paper/45">
           隊伍：
@@ -49,6 +54,10 @@ export function HeroesTab({
             ? `｜俠侶：${NPCS.find((n) => n.id === state.partnerId)?.name}`
             : ''}
         </p>
+        <p className="mt-1 text-[11px] text-amber-100/70">
+          {renownLabel(state.renown ?? 0)} {state.renown ?? 0}｜
+          {alignmentLabel(state.alignment ?? 0)} {state.alignment ?? 0}
+        </p>
       </div>
 
       {sorted.map((npc) => {
@@ -59,6 +68,7 @@ export function HeroesTab({
         const inParty = state.partyIds.includes(npc.id)
         const isPartner = state.partnerId === npc.id
         const favGifts = gifts.filter((g) => npc.favoriteGifts.includes(g.id))
+        const recruit = canRecruitNpc(state, npc.id)
 
         return (
           <article
@@ -99,6 +109,14 @@ export function HeroesTab({
             <p className="mt-2 text-[11px] text-paper/45">
               常駐：{home?.name ?? '未知'} · 好感 {affinity}/100
             </p>
+            <p className="mt-1 text-[10px] leading-relaxed text-paper/40">
+              同行條件：{recruit.hint}
+            </p>
+            {!inParty && !recruit.ok && recruit.reason && (
+              <p className="mt-1 text-[10px] leading-relaxed text-cinnabar-soft/90">
+                婉拒：{recruit.reason}
+              </p>
+            )}
             <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-ink-950">
               <div
                 className="h-full rounded-full bg-gradient-to-r from-cinnabar to-amber-500"

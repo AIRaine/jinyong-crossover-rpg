@@ -104,6 +104,7 @@ import {
   buildPlayerCombatant,
 } from '../lib/buildCombatants'
 import { applyCombatOutcomeToStoryPressure } from '../lib/growthStage'
+import { canRecruitNpc, clampRenown } from '../lib/renownAxis'
 import {
   applyChallengeVictory,
   canStartChallenge,
@@ -1561,6 +1562,7 @@ export function useGame() {
               ? '（本旬獎勵已衰減）'
               : ''
           const eventNote = isEvent ? '（事件戰勝場加碼）' : ''
+          const renownGain = isSpar ? 0 : 1
           const winBase: typeof state = {
             ...state,
             martialProgress,
@@ -1568,6 +1570,7 @@ export function useGame() {
             combatLoseStreak: 0,
             lifetimeBanditWins:
               (state.lifetimeBanditWins ?? 0) + (isSpar || isEvent ? 0 : 1),
+            renown: clampRenown((state.renown ?? 0) + renownGain),
             stats: {
               ...state.stats,
               hp: Math.max(1, Math.min(state.stats.maxHp, hp)),
@@ -1587,7 +1590,9 @@ export function useGame() {
                   : '三對三戰局勝利。',
               rewardsNote: isSpar
                 ? `銀兩 +${silverGain}、潛能 +${potGain}、切磋勝場 +1`
-                : `銀兩 +${silverGain}、潛能 +${potGain}${martialNote}${decayNote}${eventNote}`,
+                : `銀兩 +${silverGain}、潛能 +${potGain}${
+                    renownGain ? `、聲名 +${renownGain}` : ''
+                  }${martialNote}${decayNote}${eventNote}`,
             },
           }
           // 路遇／事件戰：勝利回寫節拍壓力（切磋不影響主線節奏）
@@ -1704,19 +1709,10 @@ export function useGame() {
       await ensureAudio()
       const npc = getNpcById(npcId)
       if (!npc) return
-      if (state.partyIds.includes(npcId)) {
-        showToast('已在隊伍中')
-        return
-      }
-      if (state.partyIds.length >= 2) {
+      const check = canRecruitNpc(state, npcId)
+      if (!check.ok) {
         playSound('fail')
-        showToast('隊伍最多 2 人')
-        return
-      }
-      const aff = state.affinity[npcId] ?? 0
-      if (aff < 30) {
-        playSound('fail')
-        showToast(`好感不足（需 30 好感，目前 ${aff}）`)
+        showToast(check.reason ?? '對方婉拒同行')
         return
       }
       persist({ ...state, partyIds: [...state.partyIds, npcId] })

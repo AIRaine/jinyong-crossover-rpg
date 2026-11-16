@@ -8,6 +8,11 @@ import {
 } from '../../data/equipments'
 import { computePanelStats } from '../../lib/combatStats'
 import {
+  alignmentLabel,
+  renownLabel,
+  tideInviteStatus,
+} from '../../lib/renownAxis'
+import {
   TECH_ID_POISON,
   TECH_ID_QUENCH,
   type EquipSlot,
@@ -48,6 +53,7 @@ export function CharacterTab({
   const huang = affinity.npc_huang_rong ?? 0
   const canQuench = (state.techTree[TECH_ID_QUENCH] ?? 0) > 0
   const canPoison = (state.techTree[TECH_ID_POISON] ?? 0) > 0
+  const tideInvite = tideInviteStatus(state)
 
   return (
     <section className="space-y-4 text-left">
@@ -94,6 +100,44 @@ export function CharacterTab({
             改名
           </button>
         </form>
+      </div>
+
+      <div className="rounded-2xl border border-amber-900/30 bg-ink-900/70 p-4">
+        <h3 className="font-display text-sm text-amber-50/90">江湖照影</h3>
+        <p className="mt-1 text-[11px] text-paper/45">
+          重大選擇會升降聲名與傾向；影響隊友願否同行，以及潮信請帖是否降臨。
+        </p>
+        <div className="mt-3 grid grid-cols-2 gap-2">
+          <div className="rounded-xl border border-paper/10 bg-ink-950/50 px-3 py-3">
+            <p className="text-[11px] text-paper/50">
+              {renownLabel(state.renown ?? 0)}
+            </p>
+            <p className="text-sm font-semibold text-paper">
+              {state.renown ?? 0}
+            </p>
+          </div>
+          <div className="rounded-xl border border-paper/10 bg-ink-950/50 px-3 py-3">
+            <p className="text-[11px] text-paper/50">
+              {alignmentLabel(state.alignment ?? 0)}
+            </p>
+            <p className="text-sm font-semibold text-paper">
+              {state.alignment ?? 0}
+            </p>
+          </div>
+        </div>
+        <p className="mt-3 text-[11px] leading-relaxed text-cinnabar-soft/90">
+          {tideInvite.line}
+        </p>
+        {tideInvite.shards.parts.length > 0 ? (
+          <p className="mt-1 text-[10px] text-paper/40">
+            話本碎片：{tideInvite.shards.parts.join('、')}（
+            {tideInvite.shards.current}/{tideInvite.shards.need}）
+          </p>
+        ) : (
+          <p className="mt-1 text-[10px] text-paper/40">
+            話本碎片尚未成形——多走節拍、配置非開局招、結伴與養成可累積。
+          </p>
+        )}
       </div>
 
       <div className="grid grid-cols-2 gap-2">

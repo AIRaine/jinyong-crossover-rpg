@@ -11,6 +11,7 @@ import {
 } from '../data/origins'
 import { NPCS } from '../data/npcs'
 import { grantStarterGear } from './starterGear'
+import { applyRouteAxisMarks } from './renownAxis'
 
 const STORAGE_PREFIX = 'jinyong-crossover-rpg:save:v'
 const META_KEY = 'jinyong-crossover-rpg:save-meta'
@@ -339,6 +340,16 @@ export function migrateSaveData(raw: unknown): GameState {
       migrated.lifetimeBanditWins = 0
     }
   }
+
+  // v12 → v13：江湖聲名／正邪傾向（群俠對照軸）
+  if (version < 13) {
+    if (typeof migrated.renown !== 'number') migrated.renown = 0
+    if (typeof migrated.alignment !== 'number') migrated.alignment = 0
+  }
+  if (typeof migrated.renown !== 'number') migrated.renown = 0
+  if (typeof migrated.alignment !== 'number') migrated.alignment = 0
+  // 舊存若已有路線旗，補一次聲名／傾向標記
+  migrated = applyRouteAxisMarks(migrated).state
 
   // v10 → v11：門派退叛／互斥履歷
   if (version < 11) {

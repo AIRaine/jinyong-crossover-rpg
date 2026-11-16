@@ -168,5 +168,7 @@ export function createInitialGameState(): GameState {
       weekKey: calendarWeekKey(),
       goals: buildWeeklyGoals(calendarWeekKey()),
     },
+    renown: 0,
+    alignment: 0,
   }
 }

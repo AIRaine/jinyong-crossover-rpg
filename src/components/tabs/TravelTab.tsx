@@ -16,6 +16,11 @@ import {
   nextCultivationPreview,
 } from '../../lib/growthStage'
 import {
+  alignmentLabel,
+  renownLabel,
+  tideInviteStatus,
+} from '../../lib/renownAxis'
+import {
   canStartChallenge,
   challengeCleared,
   CHALLENGE_TRIALS,
@@ -150,6 +155,7 @@ export function TravelTab({
   const pathBrief = computeJourneyProfile(routed)
   const growthBrief = computeGrowthProfile(routed)
   const growthPreview = nextCultivationPreview(routed)
+  const tideInvite = tideInviteStatus(routed)
   const coolLeft = Math.max(0, beatNeed - routed.xunsSinceLastBeat)
   const guideTips = farTravelHints(state.knownLocationIds)
   const weeklyGoals = routed.weekly.goals
@@ -266,9 +272,19 @@ export function TravelTab({
               旅程 {pathBrief.diversityScore}｜
               {pathBrief.labels.slice(0, 3).join('·') || '尚無痕跡'}
               {pathBrief.finaleEngaged
-                ? ''
-                : '｜潮信需戰績＋養成深度（非只入派）'}
+                ? '｜潮信請帖已可至'
+                : '｜潮信需話本碎片＋聲名（並養成戰績）'}
             </p>
+            <p className="mt-1 text-amber-50/75">
+              {renownLabel(tideInvite.renown)} {tideInvite.renown}｜
+              {alignmentLabel(tideInvite.alignment)} {tideInvite.alignment}
+            </p>
+            <p className="mt-1 text-cinnabar-soft/90">{tideInvite.line}</p>
+            {tideInvite.shards.parts.length > 0 && (
+              <p className="mt-0.5 text-[10px] text-paper/40">
+                話本碎片：{tideInvite.shards.parts.join('、')}
+              </p>
+            )}
             <p className="mt-1 text-teal-100/80">
               {growthBrief.stageLabel}｜養成 {growthBrief.cultivationScore}/
               {growthBrief.expectedForYear}｜
