@@ -10,7 +10,16 @@ import {
   computeJourneyProfile,
   effectiveBeatCooldown,
 } from '../../lib/journeyPath'
-import { computeGrowthProfile } from '../../lib/growthStage'
+import {
+  computeGrowthProfile,
+  nextCultivationPreview,
+} from '../../lib/growthStage'
+import {
+  canStartChallenge,
+  challengeCleared,
+  CHALLENGE_TRIALS,
+  type ChallengeTrialId,
+} from '../../lib/challengeTrials'
 import {
   getLocationById,
   LOCATION_KIND_LABEL,
@@ -27,6 +36,7 @@ import type {
   StoryEvent,
   StoryEventChoiceDef,
   StoryEventDef,
+  TabId,
 } from '../../types/game'
 
 interface TravelTabProps {
@@ -46,6 +56,8 @@ interface TravelTabProps {
   onUsePill: (itemId: string) => void
   onClaimDaily: () => void
   onClaimWeekly: (goalId: string) => void
+  onNavigateTab: (tab: TabId) => void
+  onStartChallenge: (id: ChallengeTrialId) => void
 }
 
 export function TravelTab({
@@ -64,6 +76,8 @@ export function TravelTab({
   onUsePill,
   onClaimDaily,
   onClaimWeekly,
+  onNavigateTab,
+  onStartChallenge,
 }: TravelTabProps) {
   const prologue = prologueEvent
   const showPrologue =
@@ -134,6 +148,7 @@ export function TravelTab({
   const beatNeed = effectiveBeatCooldown(routed, STORY_BEAT_COOLDOWN_XUN)
   const pathBrief = computeJourneyProfile(routed)
   const growthBrief = computeGrowthProfile(routed)
+  const growthPreview = nextCultivationPreview(routed)
   const coolLeft = Math.max(0, beatNeed - routed.xunsSinceLastBeat)
   const guideTips = farTravelHints(state.knownLocationIds)
   const weeklyGoals = routed.weekly.goals
@@ -224,12 +239,57 @@ export function TravelTab({
                 ? ''
                 : '｜潮信需戰績＋養成深度（非只入派）'}
             </p>
-            <p className="mt-0.5 text-[11px] text-teal-100/55">
+          </div>
+        )}
+        {state.prologueDone && (
+          <div className="mt-3 rounded-lg bg-ink-950/50 px-3 py-2 text-[11px] leading-relaxed ring-1 ring-paper/10">
+            <p className="text-teal-100/80">
               {growthBrief.stageLabel}｜養成 {growthBrief.cultivationScore}/
               {growthBrief.expectedForYear}｜
               {growthBrief.labels.slice(0, 2).join('·')}｜敵勢×
               {growthBrief.enemyGrowthScale.toFixed(2)}
             </p>
+            <p className="mt-1 text-teal-50/70">
+              {growthPreview.nextStageHint}
+              <br />
+              {growthPreview.gapLine}｜建議：
+              {growthPreview.focusTips.join('、')}
+            </p>
+          </div>
+        )}
+        {!pendingEvent && state.prologueDone && (
+          <div className="mt-3 rounded-lg bg-ink-950/55 px-3 py-2 ring-1 ring-paper/10">
+            <p className="text-[11px] tracking-wide text-cinnabar-soft">歇腳處</p>
+            <p className="mt-0.5 text-[11px] text-paper/50">
+              養成捷徑（不另開大系統）
+            </p>
+            <div className="mt-2 grid grid-cols-3 gap-1.5">
+              <button
+                type="button"
+                onClick={() => onNavigateTab('tech')}
+                className="touch-btn rounded-lg border border-teal-800/40 bg-teal-950/35 py-2 text-[11px] text-teal-50"
+              >
+                修練
+              </button>
+              <button
+                type="button"
+                onClick={() => onNavigateTab('character')}
+                className="touch-btn rounded-lg border border-amber-800/40 bg-amber-950/35 py-2 text-[11px] text-amber-50"
+              >
+                精煉
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  document
+                    .getElementById('rest-alchemy')
+                    ?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+                }}
+                className="touch-btn rounded-lg border border-stone-500/40 bg-stone-900/45 py-2 text-[11px] text-stone-100"
+              >
+                煉丹
+              </button>
+            </div>
           </div>
         )}
         {pendingArc && (
@@ -383,7 +443,52 @@ export function TravelTab({
         </div>
       )}
 
-      <div className="space-y-2">
+      {state.prologueDone && (
+        <div className="space-y-2 rounded-2xl border border-paper/10 bg-ink-900/70 p-3">
+          <h3 className="font-display text-sm text-paper/85">可選驗收／挑戰旗標</h3>
+          <p className="text-[11px] leading-relaxed text-paper/50">
+            不擋主線。通過只點亮旗標與小獎；失敗耗 AP，結局仍可靠敘事推進。
+          </p>
+          <ul className="space-y-2">
+            {CHALLENGE_TRIALS.map((trial) => {
+              const gate = canStartChallenge(state, trial)
+              const done = challengeCleared(state, trial)
+              return (
+                <li
+                  key={trial.id}
+                  className="rounded-lg bg-ink-950/60 px-3 py-2 ring-1 ring-paper/10"
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <div>
+                      <p className="text-xs text-paper">
+                        {trial.title}
+                        {done ? ' · 已點亮' : ''}
+                      </p>
+                      <p className="mt-0.5 text-[11px] leading-snug text-paper/50">
+                        {trial.blurb}
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      disabled={!gate.ok}
+                      onClick={() => onStartChallenge(trial.id)}
+                      className="touch-btn shrink-0 rounded-md border border-rose-700/50 bg-rose-950/50 px-2 py-1.5 text-[11px] text-rose-50 disabled:opacity-40"
+                    >
+                      {gate.ok
+                        ? done
+                          ? `再驗（${trial.apCost} AP）`
+                          : `挑戰（${trial.apCost} AP）`
+                        : gate.reason ?? '未開'}
+                    </button>
+                  </div>
+                </li>
+              )
+            })}
+          </ul>
+        </div>
+      )}
+
+      <div id="rest-alchemy" className="space-y-2 scroll-mt-4">
         <h3 className="font-display text-sm text-paper/80">簡易煉丹／丹藥</h3>
         {ALCHEMY_RECIPES.map((recipe) => (
           <button

@@ -55,6 +55,8 @@ export default function App() {
               onUsePill={game.useConsumable}
               onClaimDaily={game.claimDailyLogin}
               onClaimWeekly={game.claimWeeklyGoal}
+              onNavigateTab={game.changeTab}
+              onStartChallenge={game.startChallenge}
             />
           )}
           {game.tab === 'character' && (

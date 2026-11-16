@@ -145,6 +145,51 @@ export function computeGrowthProfile(state: GameState): GrowthProfile {
   }
 }
 
+const STAGE_NEXT: Record<number, string> = {
+  1: '下階·立足：多修練、勝幾場路遇',
+  2: '下階·分化：換非開局招／入派貢獻',
+  3: '下階·高壓：精煉兵甲、研究有成',
+  4: '下階·潮前：戰績＋養成深度開潮信',
+  5: '潮信當前：維持養成，勿空轉推旬',
+}
+
+/**
+ * 遊歷預告：關卡階＋下一養成缺口（可讀、不抄數值表）
+ */
+export function nextCultivationPreview(state: GameState): {
+  stageLabel: string
+  nextStageHint: string
+  gapLine: string
+  focusTips: string[]
+} {
+  const g = computeGrowthProfile(state)
+  const year = Math.max(1, Math.min(5, state.time?.year ?? 1))
+  const nextStageHint = STAGE_NEXT[year] ?? STAGE_NEXT[5]!
+  const gap = g.expectedForYear - g.cultivationScore
+  const gapLine =
+    gap > 0
+      ? `養成缺口 ${gap}（現 ${g.cultivationScore}／目標 ${g.expectedForYear}）`
+      : `養成已達標（${g.cultivationScore}／${g.expectedForYear}）`
+
+  const focusTips: string[] = []
+  if (g.martialLevelsEquipped < 8 || g.researchDepth < 6) {
+    focusTips.push('修練武學／換非開局招')
+  }
+  if (g.refineTotal < 4) focusTips.push('裝備精煉')
+  if (!state.sectId || (state.sectContribution ?? 0) < 30) {
+    focusTips.push('門派貢獻')
+  }
+  if ((state.lifetimeBanditWins ?? 0) < 3) focusTips.push('路遇勝仗')
+  if (focusTips.length === 0) focusTips.push('可選驗收秘境／挑戰旗標')
+
+  return {
+    stageLabel: g.stageLabel,
+    nextStageHint,
+    gapLine,
+    focusTips: focusTips.slice(0, 3),
+  }
+}
+
 /**
  * 年分台階：早期可硬剛，中後期必須養成。
  * y1=1.00 → y5≈1.58（比舊版每年 +6% 更陡）

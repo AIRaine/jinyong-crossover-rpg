@@ -105,6 +105,13 @@ import {
 } from '../lib/buildCombatants'
 import { applyCombatOutcomeToStoryPressure } from '../lib/growthStage'
 import {
+  applyChallengeVictory,
+  canStartChallenge,
+  getChallengeTrial,
+  makeChallengeEncounter,
+  type ChallengeTrialId,
+} from '../lib/challengeTrials'
+import {
   makeBanditEncounter,
   makeSparEncounter,
   performPlayerAction,
@@ -141,7 +148,7 @@ import {
   type TabId,
 } from '../types/game'
 
-type CombatKind = 'bandit' | 'spar' | 'event'
+type CombatKind = 'bandit' | 'spar' | 'event' | 'challenge'
 
 function mergeItem(
   inventory: InventoryItem[],
@@ -174,6 +181,8 @@ export function useGame() {
   const [statusMsg, setStatusMsg] = useState<string | null>(null)
   const [combat, setCombat] = useState<CombatState | null>(null)
   const [combatKind, setCombatKind] = useState<CombatKind | null>(null)
+  const [activeChallengeId, setActiveChallengeId] =
+    useState<ChallengeTrialId | null>(null)
   const [lastGacha, setLastGacha] = useState<EquipmentDef[]>([])
 
   const persist = useCallback((next: GameState) => {
@@ -1413,6 +1422,40 @@ export function useGame() {
     )
   }, [ensureAudio, persist, showToast, state])
 
+  const startChallenge = useCallback(
+    async (id: ChallengeTrialId) => {
+      await ensureAudio()
+      const trial = getChallengeTrial(id)
+      if (!trial) return
+      const gate = canStartChallenge(state, trial)
+      if (!gate.ok) {
+        playSound('fail')
+        showToast(gate.reason ?? '無法挑戰')
+        return
+      }
+      const paid: GameState = {
+        ...state,
+        actionPoints: state.actionPoints - trial.apCost,
+      }
+      persist(paid)
+      playSound('combat')
+      setActiveChallengeId(trial.id)
+      setCombatKind('challenge')
+      setCombat(
+        makeChallengeEncounter(
+          buildPlayerCombatant(paid),
+          buildPartyCombatants(paid),
+          paid,
+          trial,
+        ),
+      )
+      setStatusMsg(
+        `【${trial.title}】開戰（-${trial.apCost} AP｜可選驗收，不擋主線）`,
+      )
+    },
+    [ensureAudio, persist, showToast, state],
+  )
+
   const combatAct = useCallback(
     (action: CombatActionKind, targetId?: string) => {
       if (!combat) return
@@ -1422,6 +1465,57 @@ export function useGame() {
       if (next.finished) {
         const isSpar = combatKind === 'spar'
         const isEvent = combatKind === 'event'
+        const isChallenge = combatKind === 'challenge'
+        if (isChallenge) {
+          const trial = activeChallengeId
+            ? getChallengeTrial(activeChallengeId)
+            : undefined
+          const player = next.allies.find((a) => a.isPlayer)
+          const hp = player?.hp ?? state.stats.hp
+          if (next.victory && trial) {
+            const rewarded = applyChallengeVictory(
+              {
+                ...state,
+                combatLoseStreak: 0,
+                stats: {
+                  ...state.stats,
+                  hp: Math.max(1, Math.min(state.stats.maxHp, hp)),
+                },
+                lastCombatResult: {
+                  victory: true,
+                  summary: `驗收通過：${trial.title}`,
+                  rewardsNote: '旗標已點亮（主線不依賴此戰）',
+                },
+              },
+              trial,
+            )
+            persist(rewarded)
+            showToast(`驗收通過「${trial.title}」：旗標點亮`)
+          } else {
+            persist({
+              ...state,
+              stats: {
+                ...state.stats,
+                hp: Math.max(1, Math.floor(state.stats.maxHp * 0.55)),
+                stamina: Math.min(
+                  state.stats.maxStamina,
+                  state.stats.stamina + 8,
+                ),
+              },
+              lastCombatResult: {
+                victory: false,
+                summary: trial
+                  ? `驗收未過：${trial.title}（不影響主線）`
+                  : '驗收未過（不影響主線）',
+                rewardsNote: '可休整後再試；結局不依賴挑戰旗標。',
+              },
+            })
+            showToast('驗收未過——主線仍可推進')
+          }
+          setActiveChallengeId(null)
+          setCombatKind(null)
+          return
+        }
         if (next.victory) {
           const player = next.allies.find((a) => a.isPlayer)
           const hp = player?.hp ?? state.stats.hp
@@ -1552,12 +1646,20 @@ export function useGame() {
         setCombatKind(null)
       }
     },
-    [combat, combatKind, persist, showToast, state],
+    [
+      activeChallengeId,
+      combat,
+      combatKind,
+      persist,
+      showToast,
+      state,
+    ],
   )
 
   const closeCombat = useCallback(() => {
     setCombat(null)
     setCombatKind(null)
+    setActiveChallengeId(null)
     playSound('page')
   }, [])
 
@@ -2076,6 +2178,7 @@ export function useGame() {
     ensureAudio,
     showToast,
     startBanditFight,
+    startChallenge,
     combatAct,
     closeCombat,
     giftNpc,
