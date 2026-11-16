@@ -4,6 +4,7 @@
  * - 研究／入派／組隊／勝仗 → 推進更順、潮信結局有血色
  */
 import { getMartialById } from '../data/martialArts'
+import { finaleCombatCultivationOk } from './growthStage'
 import type { GameState, MartialLoadout } from '../types/game'
 
 export const STARTER_MARTIAL_IDS = [
@@ -134,17 +135,17 @@ export function computeJourneyProfile(state: GameState): JourneyProfile {
   if (partyCount > 0) labels.push(`同伴×${partyCount}`)
   if (combatWins > 0) labels.push(`路遇勝×${combatWins}`)
 
-  const finaleEngaged =
-    hasSect ||
-    partyCount >= 1 ||
-    combatWins >= 3 ||
-    nonStarterEquipped >= 2 ||
-    coldMartialEquipped >= 1
+  // 結局投入：須戰鬥／養成深度，不能只入派或只拉隊友
+  const finaleEngaged = finaleCombatCultivationOk(state)
 
   let endingBranch: EndingBranch = 'hollow_tide'
-  if (hasSect && (coldSect || nonStarterEquipped >= 2)) endingBranch = 'sect_tide'
-  else if (partyCount >= 1) endingBranch = 'companions_tide'
-  else if (combatWins >= 3 || nonStarterEquipped >= 2) endingBranch = 'blade_tide'
+  if (finaleEngaged && hasSect && (coldSect || nonStarterEquipped >= 2)) {
+    endingBranch = 'sect_tide'
+  } else if (finaleEngaged && partyCount >= 1 && combatWins >= 3) {
+    endingBranch = 'companions_tide'
+  } else if (finaleEngaged && combatWins >= 5) {
+    endingBranch = 'blade_tide'
+  }
 
   return {
     nonStarterEquipped,

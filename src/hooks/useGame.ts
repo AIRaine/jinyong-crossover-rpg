@@ -103,6 +103,7 @@ import {
   buildPartyCombatants,
   buildPlayerCombatant,
 } from '../lib/buildCombatants'
+import { applyCombatOutcomeToStoryPressure } from '../lib/growthStage'
 import {
   makeBanditEncounter,
   makeSparEncounter,
@@ -1466,7 +1467,7 @@ export function useGame() {
               ? '（本旬獎勵已衰減）'
               : ''
           const eventNote = isEvent ? '（事件戰勝場加碼）' : ''
-          persist({
+          const winBase: typeof state = {
             ...state,
             martialProgress,
             martialLoadout,
@@ -1494,7 +1495,13 @@ export function useGame() {
                 ? `銀兩 +${silverGain}、潛能 +${potGain}、切磋勝場 +1`
                 : `銀兩 +${silverGain}、潛能 +${potGain}${martialNote}${decayNote}${eventNote}`,
             },
-          })
+          }
+          // 路遇／事件戰：勝利回寫節拍壓力（切磋不影響主線節奏）
+          persist(
+            isSpar
+              ? winBase
+              : applyCombatOutcomeToStoryPressure(winBase, true),
+          )
           showToast(
             isSpar
               ? `切磋勝利：銀兩 +${silverGain}、潛能 +${potGain}`
@@ -1504,7 +1511,7 @@ export function useGame() {
           const streak = state.combatLoseStreak + 1
           // 連敗恢復更厚：一敗 40%、二敗 55%、三敗以上 70%
           const hpRatio = streak >= 3 ? 0.7 : streak === 2 ? 0.55 : 0.4
-          persist({
+          const loseBase: typeof state = {
             ...state,
             combatLoseStreak: streak,
             stats: {
@@ -1527,7 +1534,12 @@ export function useGame() {
                   ? '連敗保護：路遇暫時鎖定，請先旬制／服丹／遠行。'
                   : undefined,
             },
-          })
+          }
+          persist(
+            isSpar
+              ? loseBase
+              : applyCombatOutcomeToStoryPressure(loseBase, false),
+          )
           showToast(
             isSpar
               ? '切磋敗北，氣血已回復部分'

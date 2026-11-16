@@ -2,6 +2,7 @@
  * 門派／招式樹／故事路線 → 可量化戰鬥／資源修飾。
  */
 import { getMartialGate } from '../data/martialGates'
+import { computeGrowthProfile } from './growthStage'
 import { computeJourneyProfile } from './journeyPath'
 import { getSectRule, type SectCombatProfile } from './sectRules'
 import type { GameFlags, GameState } from '../types/game'
@@ -140,21 +141,29 @@ export function computeDifficultyMods(state: GameState): DifficultyMods {
   const route = routeMods(state.flags ?? {})
   const tree = treeDepthMods(state)
   const path = pathDiversityMods(state)
+  const growth = computeGrowthProfile(state)
   const labels = [
     ...(state.sectId ? [`門派·${state.sectId}`] : ['門派·無']),
+    growth.stageLabel,
     ...route.labels,
     ...tree.labels,
     ...path.labels,
+    ...growth.labels,
   ]
   return {
-    atkFlat: profile.atkFlat + route.atkFlat + path.atkFlat,
-    defFlat: profile.defFlat,
+    atkFlat: profile.atkFlat + route.atkFlat + path.atkFlat + growth.atkFlat,
+    defFlat: profile.defFlat + growth.defFlat,
     skillPowerFlat:
       profile.skillPowerFlat +
       route.skillPowerFlat +
       tree.skillPowerFlat +
-      path.skillPowerFlat,
-    enemyScale: profile.enemyScale * route.enemyScale * tree.enemyScale,
+      path.skillPowerFlat +
+      growth.skillGrowthFlat,
+    enemyScale:
+      profile.enemyScale *
+      route.enemyScale *
+      tree.enemyScale *
+      growth.enemyGrowthScale,
     banditSilverFlat: profile.banditSilverFlat + route.banditSilverFlat,
     labels,
   }

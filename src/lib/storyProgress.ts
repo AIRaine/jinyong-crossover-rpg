@@ -182,8 +182,15 @@ export function resolveAdvanceXunStory(
   const yearMain = getMainEventForYear(year)
   const yearMainDone = Boolean(yearMain && storyFlags[yearMain.id])
   const path = computeJourneyProfile(routed)
-  const softNeed = STORY_BEAT_COOLDOWN_XUN + path.softYearExtra
-  const beatNeed = effectiveBeatCooldown(routed, STORY_BEAT_COOLDOWN_XUN)
+  const combatBias =
+    typeof routed.flags.combat_beat_bias === 'number'
+      ? routed.flags.combat_beat_bias
+      : 0
+  // combat_beat_bias：勝仗可為負（加速）、敗仗為正（拖慢）
+  const softNeed =
+    STORY_BEAT_COOLDOWN_XUN + path.softYearExtra + Math.max(0, combatBias)
+  const beatNeed =
+    effectiveBeatCooldown(routed, STORY_BEAT_COOLDOWN_XUN) + combatBias
 
   // 軟進年：冷卻滿＋當年主線已了＋未滿五年；空轉旅程需多捱幾旬
   if (

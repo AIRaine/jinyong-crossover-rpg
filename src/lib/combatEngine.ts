@@ -1,4 +1,5 @@
 import { calcDamage } from './combatMath'
+import { stageYearEnemyScale } from './growthStage'
 
 export type CombatStatus = 'none' | 'poison' | 'stun'
 
@@ -313,14 +314,12 @@ export function makeBanditEncounter(
 ): CombatState {
   const streak = Math.max(0, opts.loseStreak ?? 0)
   const year = Math.max(1, opts.year ?? 1)
-  // 連敗：每層約 -12% 敵方面板；年分：每年 +6%（上限 +30%）——普攻可過早期，後期需絕招／修練
-  // enemyScale：門派／路線／招式鏈額外倍率（可測難度分叉）
-  // 真實隊友取代臨時幫手後戰力躍升；敵方隨隊友人數微幅抬升，避免雙隊友近乎穩贏
+  // 連敗保護；年分台階（y1→y5 約 1.0→1.58）；門派／養成落後另乘 enemyScale
+  // 真實隊友溢出抬敵，避免雙人免費穩贏
   const soften = Math.max(0.62, 1 - streak * 0.12)
-  const yearScale = Math.min(1.3, 1 + (year - 1) * 0.06)
-  const pathScale = Math.max(0.85, Math.min(1.35, opts.enemyScale ?? 1))
+  const yearScale = stageYearEnemyScale(year)
+  const pathScale = Math.max(0.85, Math.min(1.45, opts.enemyScale ?? 1))
   const realAllies = Math.max(0, Math.min(2, allyExtras.length))
-  // 依「相對臨時幫手的溢出戰力」抬敵，避免：①雙隊友穩贏 ②高修帶隊反而比單人難
   const padBaselineAtk = 7
   const allyAtk = allyExtras.reduce((s, a) => s + (a.atk ?? 0), 0)
   const surplusAtk = Math.max(0, allyAtk - realAllies * padBaselineAtk)

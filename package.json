@@ -18,7 +18,8 @@
     "sim:travel-ap": "npx --yes tsx scripts/sim-travel-ap.ts",
     "sim:first-aid": "npx --yes tsx scripts/sim-first-aid-exploit.ts",
     "sim:clear-usage": "npx --yes tsx scripts/sim-clear-usage.ts",
-    "sim:hundred-persona": "npx --yes tsx scripts/sim-hundred-persona.ts"
+    "sim:hundred-persona": "npx --yes tsx scripts/sim-hundred-persona.ts",
+    "sim:growth-stage": "npx --yes tsx scripts/sim-growth-stage.ts"
   },
   "dependencies": {
     "lucide-react": "^1.73.0",

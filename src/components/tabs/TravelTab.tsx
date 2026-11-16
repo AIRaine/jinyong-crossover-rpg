@@ -10,6 +10,7 @@ import {
   computeJourneyProfile,
   effectiveBeatCooldown,
 } from '../../lib/journeyPath'
+import { computeGrowthProfile } from '../../lib/growthStage'
 import {
   getLocationById,
   LOCATION_KIND_LABEL,
@@ -132,6 +133,7 @@ export function TravelTab({
     : null
   const beatNeed = effectiveBeatCooldown(routed, STORY_BEAT_COOLDOWN_XUN)
   const pathBrief = computeJourneyProfile(routed)
+  const growthBrief = computeGrowthProfile(routed)
   const coolLeft = Math.max(0, beatNeed - routed.xunsSinceLastBeat)
   const guideTips = farTravelHints(state.knownLocationIds)
   const weeklyGoals = routed.weekly.goals
@@ -218,7 +220,15 @@ export function TravelTab({
             <p className="mt-1 text-[11px] text-amber-200/60">
               旅程 {pathBrief.diversityScore}｜
               {pathBrief.labels.slice(0, 3).join('·') || '尚無痕跡'}
-              {pathBrief.finaleEngaged ? '' : '｜潮信尚需入派／同伴／勝仗或非開局招'}
+              {pathBrief.finaleEngaged
+                ? ''
+                : '｜潮信需戰績＋養成深度（非只入派）'}
+            </p>
+            <p className="mt-0.5 text-[11px] text-teal-100/55">
+              {growthBrief.stageLabel}｜養成 {growthBrief.cultivationScore}/
+              {growthBrief.expectedForYear}｜
+              {growthBrief.labels.slice(0, 2).join('·')}｜敵勢×
+              {growthBrief.enemyGrowthScale.toFixed(2)}
             </p>
           </div>
         )}
