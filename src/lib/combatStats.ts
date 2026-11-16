@@ -4,6 +4,7 @@ import {
 } from '../data/equipments'
 import { getMartialById } from '../data/martialArts'
 import { softCapBonus } from './combatMath'
+import { resonancePanelBonus } from './martialResonance'
 import type { GameState, PlayerStats } from '../types/game'
 
 /** 依裝備＋武學配置計算面板屬性（含精煉／淬火／塗毒加成＋攻防軟上限） */
@@ -59,6 +60,11 @@ export function computePanelStats(state: GameState): PlayerStats {
   // 課金永久加值（商店軟上限，數值刻意小）
   atkBonus += Math.min(6, state.paidAtkBonus ?? 0)
   defBonus += Math.min(6, state.paidDefBonus ?? 0)
+
+  // 武學成對共鳴（配置齊全時微幅加值）
+  const reso = resonancePanelBonus(state)
+  atkBonus += reso.atk
+  defBonus += reso.def
 
   const attack = base.attack + Math.floor(softCapBonus(atkBonus))
   const defense = base.defense + Math.floor(softCapBonus(defBonus, 40, 0.5))

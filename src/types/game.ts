@@ -1,5 +1,5 @@
 /** 存檔結構版本；變更欄位時遞增並在 migrateSaveData 處理 */
-export const SAVE_VERSION = 13 as const
+export const SAVE_VERSION = 14 as const
 
 /** 底部分頁 */
 export type TabId =
@@ -569,6 +569,18 @@ export interface GameState {
   renown: number
   /** 正邪傾向 -50～+50（正偏俠義、負偏權謀） */
   alignment: number
+  /**
+   * 江湖見聞錄（輪迴圖鑑）：歷世武學／足迹／故人／話本／結局／旗標
+   * 未通關亦累積；NG+ 保留
+   */
+  jianghuAtlas: {
+    martialIds: string[]
+    locationIds: string[]
+    npcIds: string[]
+    beatIds: string[]
+    endingKeys: string[]
+    challengeIds: string[]
+  }
 }
 
 export interface ApplyRewardsResult {

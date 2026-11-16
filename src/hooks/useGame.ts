@@ -104,6 +104,7 @@ import {
   buildPlayerCombatant,
 } from '../lib/buildCombatants'
 import { applyCombatOutcomeToStoryPressure } from '../lib/growthStage'
+import { syncJianghuAtlas } from '../lib/jianghuAtlas'
 import { canRecruitNpc, clampRenown } from '../lib/renownAxis'
 import {
   applyChallengeVictory,
@@ -187,8 +188,9 @@ export function useGame() {
   const [lastGacha, setLastGacha] = useState<EquipmentDef[]>([])
 
   const persist = useCallback((next: GameState) => {
-    const stamped = autoSave(next)
-    setState({ ...next, updatedAt: stamped.updatedAt })
+    const synced = syncJianghuAtlas(next)
+    const stamped = autoSave(synced)
+    setState({ ...synced, updatedAt: stamped.updatedAt })
   }, [])
 
   useEffect(() => {

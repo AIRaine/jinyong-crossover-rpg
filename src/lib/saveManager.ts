@@ -11,6 +11,7 @@ import {
 } from '../data/origins'
 import { NPCS } from '../data/npcs'
 import { grantStarterGear } from './starterGear'
+import { emptyJianghuAtlas, mergeAtlas } from './jianghuAtlas'
 import { applyRouteAxisMarks } from './renownAxis'
 
 const STORAGE_PREFIX = 'jinyong-crossover-rpg:save:v'
@@ -350,6 +351,21 @@ export function migrateSaveData(raw: unknown): GameState {
   if (typeof migrated.alignment !== 'number') migrated.alignment = 0
   // 舊存若已有路線旗，補一次聲名／傾向標記
   migrated = applyRouteAxisMarks(migrated).state
+
+  // v13 → v14：江湖見聞錄（輪迴圖鑑）
+  if (version < 14 || !migrated.jianghuAtlas || typeof migrated.jianghuAtlas !== 'object') {
+    migrated.jianghuAtlas = emptyJianghuAtlas()
+  } else {
+    const a = migrated.jianghuAtlas
+    migrated.jianghuAtlas = mergeAtlas(emptyJianghuAtlas(), {
+      martialIds: Array.isArray(a.martialIds) ? a.martialIds : [],
+      locationIds: Array.isArray(a.locationIds) ? a.locationIds : [],
+      npcIds: Array.isArray(a.npcIds) ? a.npcIds : [],
+      beatIds: Array.isArray(a.beatIds) ? a.beatIds : [],
+      endingKeys: Array.isArray(a.endingKeys) ? a.endingKeys : [],
+      challengeIds: Array.isArray(a.challengeIds) ? a.challengeIds : [],
+    })
+  }
 
   // v10 → v11：門派退叛／互斥履歷
   if (version < 11) {

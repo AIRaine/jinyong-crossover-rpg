@@ -12,6 +12,10 @@ import {
   martialGateHint,
 } from '../../lib/martialGates'
 import {
+  activeEquippedResonances,
+  resonancesForArt,
+} from '../../lib/martialResonance'
+import {
   TECH_BRANCH_LABEL,
   type GameState,
   type MartialKind,
@@ -117,6 +121,16 @@ export function TechTab({ state, onUnlock, onTrain, onSetSlot }: TechTabProps) {
                             規矩：{hint}
                           </p>
                         )}
+                        {resonancesForArt(state, art.id)
+                          .slice(0, 1)
+                          .map((r) => (
+                            <p
+                              key={r.id}
+                              className="mt-1 text-[10px] leading-snug text-teal-100/75"
+                            >
+                              {r.line}
+                            </p>
+                          ))}
                         <p className="mt-1 text-[11px] text-paper/45">
                           {lv > 0 ? `第 ${lv} 重` : '未學會'}
                           {lv > 0 && lv < 10 && bottleneck
@@ -238,6 +252,7 @@ function LoadoutPanel({
   onSetSlot: TechTabProps['onSetSlot']
 }) {
   const L = state.martialLoadout
+  const activeReso = activeEquippedResonances(state)
   const nameOf = (id: string | null) =>
     id ? (MARTIAL_ARTS.find((m) => m.id === id)?.name ?? id) : '未配置'
   return (
@@ -265,6 +280,17 @@ function LoadoutPanel({
       <p className="mt-2 text-[11px] text-paper/40">
         悟性 {state.comprehension} · 根骨 {state.rootBone}（影響瓶頸）
       </p>
+      {activeReso.length > 0 ? (
+        <ul className="mt-2 space-y-1 text-[10px] leading-relaxed text-teal-100/80">
+          {activeReso.map((r) => (
+            <li key={r.id}>{r.line}</li>
+          ))}
+        </ul>
+      ) : (
+        <p className="mt-2 text-[10px] text-paper/40">
+          成對共鳴：專精前置鏈並同時配置，可啟動正向共鳴（見各招提示）。
+        </p>
+      )}
       <p className="mt-1 text-[11px] text-amber-200/70">
         主動欄有 4 格：新學招式會自動占空位或替換開局招。入派／組隊／路遇勝與非開局配置影響潮信結局。
       </p>

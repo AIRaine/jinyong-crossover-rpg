@@ -8,6 +8,11 @@ import {
 } from '../../data/equipments'
 import { computePanelStats } from '../../lib/combatStats'
 import {
+  buildLifeScroll,
+  summarizeAtlas,
+  tideWindowHint,
+} from '../../lib/jianghuAtlas'
+import {
   alignmentLabel,
   renownLabel,
   tideInviteStatus,
@@ -54,6 +59,9 @@ export function CharacterTab({
   const canQuench = (state.techTree[TECH_ID_QUENCH] ?? 0) > 0
   const canPoison = (state.techTree[TECH_ID_POISON] ?? 0) > 0
   const tideInvite = tideInviteStatus(state)
+  const atlas = summarizeAtlas(state)
+  const lifeScroll = buildLifeScroll(state)
+  const windowHint = tideWindowHint(state)
 
   return (
     <section className="space-y-4 text-left">
@@ -138,6 +146,30 @@ export function CharacterTab({
             話本碎片尚未成形——多走節拍、配置非開局招、結伴與養成可累積。
           </p>
         )}
+        <p className="mt-2 text-[11px] leading-relaxed text-amber-100/75">
+          {windowHint}
+        </p>
+      </div>
+
+      <div className="rounded-2xl border border-teal-900/35 bg-ink-900/70 p-4">
+        <h3 className="font-display text-sm text-teal-50/90">江湖見聞錄</h3>
+        <p className="mt-1 text-[11px] text-paper/45">
+          歷世殘頁：未通關也會留下；結算 NG+ 時帶入下一世。
+        </p>
+        <p className="mt-2 text-[11px] leading-relaxed text-teal-100/85">
+          {atlas.line}
+        </p>
+        <ul className="mt-2 space-y-1 text-[10px] leading-relaxed text-paper/45">
+          {atlas.detailLines.map((d) => (
+            <li key={d}>{d}</li>
+          ))}
+        </ul>
+        <p className="mt-3 text-[11px] tracking-wide text-paper/50">生平長卷</p>
+        <ul className="mt-1 space-y-1 text-[10px] leading-relaxed text-paper/55">
+          {lifeScroll.map((line) => (
+            <li key={line}>{line}</li>
+          ))}
+        </ul>
       </div>
 
       <div className="grid grid-cols-2 gap-2">

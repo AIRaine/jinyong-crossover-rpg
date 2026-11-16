@@ -170,5 +170,13 @@ export function createInitialGameState(): GameState {
     },
     renown: 0,
     alignment: 0,
+    jianghuAtlas: {
+      martialIds: [],
+      locationIds: [],
+      npcIds: [],
+      beatIds: [],
+      endingKeys: [],
+      challengeIds: [],
+    },
   }
 }

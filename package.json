@@ -21,7 +21,8 @@
     "sim:hundred-persona": "npx --yes tsx scripts/sim-hundred-persona.ts",
     "sim:growth-stage": "npx --yes tsx scripts/sim-growth-stage.ts",
     "sim:challenge-trials": "npx --yes tsx scripts/sim-challenge-trials.ts",
-    "sim:renown-axis": "npx --yes tsx scripts/sim-renown-axis.ts"
+    "sim:renown-axis": "npx --yes tsx scripts/sim-renown-axis.ts",
+    "sim:wuxialife-features": "npx --yes tsx scripts/sim-wuxialife-features.ts"
   },
   "dependencies": {
     "lucide-react": "^1.73.0",

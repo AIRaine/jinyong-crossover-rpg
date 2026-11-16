@@ -16,6 +16,11 @@ import {
   nextCultivationPreview,
 } from '../../lib/growthStage'
 import {
+  buildLifeScroll,
+  summarizeAtlas,
+  tideWindowHint,
+} from '../../lib/jianghuAtlas'
+import {
   alignmentLabel,
   renownLabel,
   tideInviteStatus,
@@ -156,6 +161,13 @@ export function TravelTab({
   const growthBrief = computeGrowthProfile(routed)
   const growthPreview = nextCultivationPreview(routed)
   const tideInvite = tideInviteStatus(routed)
+  const windowHint = tideWindowHint(routed)
+  const atlasLine = summarizeAtlas(routed).line
+  const showLifeScroll =
+    routed.ngPlusReady ||
+    Boolean(routed.storyFlags?.main_y5_wharf) ||
+    (routed.time?.year ?? 1) >= 4
+  const lifeScroll = showLifeScroll ? buildLifeScroll(routed) : []
   const coolLeft = Math.max(0, beatNeed - routed.xunsSinceLastBeat)
   const guideTips = farTravelHints(state.knownLocationIds)
   const weeklyGoals = routed.weekly.goals
@@ -280,17 +292,26 @@ export function TravelTab({
               {alignmentLabel(tideInvite.alignment)} {tideInvite.alignment}
             </p>
             <p className="mt-1 text-cinnabar-soft/90">{tideInvite.line}</p>
+            <p className="mt-0.5 text-[10px] text-amber-100/70">{windowHint}</p>
             {tideInvite.shards.parts.length > 0 && (
               <p className="mt-0.5 text-[10px] text-paper/40">
                 話本碎片：{tideInvite.shards.parts.join('、')}
               </p>
             )}
+            <p className="mt-1 text-[10px] text-teal-50/65">{atlasLine}</p>
             <p className="mt-1 text-teal-100/80">
               {growthBrief.stageLabel}｜養成 {growthBrief.cultivationScore}/
               {growthBrief.expectedForYear}｜
               {growthBrief.labels.slice(0, 2).join('·')}｜敵勢×
               {growthBrief.enemyGrowthScale.toFixed(2)}
             </p>
+            {lifeScroll.length > 0 && (
+              <div className="mt-2 border-t border-paper/10 pt-2 text-[10px] leading-relaxed text-paper/50">
+                {lifeScroll.slice(0, 3).map((line) => (
+                  <p key={line}>{line}</p>
+                ))}
+              </div>
+            )}
             <p className="mt-1 text-teal-50/70">
               {growthPreview.nextStageHint}
               <br />
