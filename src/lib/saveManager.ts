@@ -329,6 +329,24 @@ export function migrateSaveData(raw: unknown): GameState {
     }
   }
 
+  // v10 → v11：門派退叛／互斥履歷
+  if (version < 11) {
+    if (typeof migrated.lifetimeXuns !== 'number') {
+      const y = Math.max(1, migrated.time?.year ?? 1)
+      const m = Math.max(1, migrated.time?.month ?? 1)
+      const x = Math.max(0, migrated.time?.xun ?? 0)
+      migrated.lifetimeXuns = (y - 1) * 36 + (m - 1) * 3 + x
+    }
+    if (!Array.isArray(migrated.sectBanIds)) migrated.sectBanIds = []
+    if (!Array.isArray(migrated.sectBannedAlliances)) {
+      migrated.sectBannedAlliances = []
+    }
+    if (typeof migrated.sectJoinCooldownUntilXun !== 'number') {
+      migrated.sectJoinCooldownUntilXun = 0
+    }
+    if (!Array.isArray(migrated.sectHistory)) migrated.sectHistory = []
+  }
+
   // v9 → v10：故事弧／日登／週目標（數週節奏骨架）
   if (version < 10) {
     if (typeof migrated.routeSeed !== 'number' || migrated.routeSeed < 1) {

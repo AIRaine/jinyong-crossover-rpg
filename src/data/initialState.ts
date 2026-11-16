@@ -126,6 +126,11 @@ export function createInitialGameState(): GameState {
     partnerId: null,
     sectId: null,
     sectContribution: 0,
+    lifetimeXuns: 0,
+    sectBanIds: [],
+    sectBannedAlliances: [],
+    sectJoinCooldownUntilXun: 0,
+    sectHistory: [],
     storyFlags: {},
     pendingEventId: null,
     rumors: [

@@ -13,7 +13,8 @@
     "sim:encounter-farm": "npx --yes tsx scripts/sim-encounter-farm.ts",
     "sim:solid-play": "npx --yes tsx scripts/sim-solid-play.ts",
     "sim:pay-tier": "npx --yes tsx scripts/sim-pay-tier.ts",
-    "sim:difficulty": "npx --yes tsx scripts/sim-difficulty-study.ts"
+    "sim:difficulty": "npx --yes tsx scripts/sim-difficulty-study.ts",
+    "sim:sect-route": "npx --yes tsx scripts/sim-sect-skill-route.ts"
   },
   "dependencies": {
     "lucide-react": "^1.73.0",

@@ -1,5 +1,5 @@
 /** 存檔結構版本；變更欄位時遞增並在 migrateSaveData 處理 */
-export const SAVE_VERSION = 10 as const
+export const SAVE_VERSION = 11 as const
 
 /** 底部分頁 */
 export type TabId =
@@ -414,6 +414,13 @@ export interface SectDef {
   rankThresholds: number[]
 }
 
+/** 門派履歷（入／退／叛） */
+export interface SectHistoryEntry {
+  sectId: string
+  mode: 'join' | 'leave' | 'betray'
+  atXun: number
+}
+
 export interface ShopOffer {
   id: string
   name: string
@@ -494,6 +501,16 @@ export interface GameState {
   /** 門派 */
   sectId: string | null
   sectContribution: number
+  /** 累計推進旬數（退派冷卻用） */
+  lifetimeXuns: number
+  /** 永禁再入的門派 id */
+  sectBanIds: string[]
+  /** 叛出後永禁的聯盟（orthodox／heretic／tomb…） */
+  sectBannedAlliances: string[]
+  /** 可再申請入門的 lifetimeXuns 門檻 */
+  sectJoinCooldownUntilXun: number
+  /** 入退派履歷 */
+  sectHistory: SectHistoryEntry[]
   /** 已觸發主線／奇遇 */
   storyFlags: Record<string, boolean>
   /** 當前可選事件 id */

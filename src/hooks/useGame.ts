@@ -54,6 +54,19 @@ import {
   sectRankFromContribution,
 } from '../data/sects'
 import {
+  applyJoinSect,
+  applyLeaveSect,
+  canJoinSect,
+  canLeaveSect,
+  describeJoinBlock,
+  getSectRule,
+} from '../lib/sectRules'
+import {
+  canEquipMartial,
+  canProgressMartial,
+} from '../lib/martialGates'
+import { computeDifficultyMods } from '../lib/difficultyModifiers'
+import {
   MOCK_TOPUP_PACKS,
   MONTHLY_DAILY_AP,
   MONTHLY_DAILY_POTENTIAL,
@@ -690,6 +703,12 @@ export function useGame() {
         if (slot === 'heart' && art.kind !== 'heart') return
         if (slot === 'qinggong' && art.kind !== 'qinggong') return
         if (slot === 'active' && art.kind !== 'active') return
+        const equipGate = canEquipMartial(state, artId)
+        if (!equipGate.ok) {
+          playSound('fail')
+          showToast(equipGate.reason)
+          return
+        }
       }
       const loadout = { ...state.martialLoadout, activeIds: [...state.martialLoadout.activeIds] as GameState['martialLoadout']['activeIds'] }
       if (slot === 'internal') loadout.internalId = artId
@@ -713,6 +732,12 @@ export function useGame() {
       const level = state.martialProgress[artId] ?? 0
       if (!art) return
       if (level <= 0) {
+        const learnGate = canProgressMartial(state, artId, { learning: true })
+        if (!learnGate.ok) {
+          playSound('fail')
+          showToast(learnGate.reason)
+          return
+        }
         // 學習：消耗潛能解鎖 1 級
         const learnCost = 5
         if (state.potential < learnCost) {
@@ -740,6 +765,12 @@ export function useGame() {
       if (level >= 10) {
         playSound('fail')
         showToast('已達第十重圓滿')
+        return
+      }
+      const trainGate = canProgressMartial(state, artId, { learning: false })
+      if (!trainGate.ok) {
+        playSound('fail')
+        showToast(trainGate.reason)
         return
       }
       const target = level + 1
@@ -1362,17 +1393,19 @@ export function useGame() {
     persist(paid)
     playSound('combat')
     setCombatKind('bandit')
+    const mods = computeDifficultyMods(paid)
     const encounter = makeBanditEncounter(
       buildPlayerCombatant(paid),
       buildPartyCombatants(paid),
       {
         loseStreak: paid.combatLoseStreak,
         year: paid.time.year,
+        enemyScale: mods.enemyScale,
       },
     )
     setCombat(encounter)
     setStatusMsg(
-      `路遇開戰（-${BANDIT_FIGHT_AP_COST} AP｜本旬 ${paid.banditFightsThisXun}/${BANDIT_FIGHTS_PER_XUN_MAX}）`,
+      `路遇開戰（-${BANDIT_FIGHT_AP_COST} AP｜本旬 ${paid.banditFightsThisXun}/${BANDIT_FIGHTS_PER_XUN_MAX}｜敵勢×${mods.enemyScale.toFixed(2)}）`,
     )
   }, [ensureAudio, persist, showToast, state])
 
@@ -1388,6 +1421,7 @@ export function useGame() {
         if (next.victory) {
           const player = next.allies.find((a) => a.isPlayer)
           const hp = player?.hp ?? state.stats.hp
+          const mods = computeDifficultyMods(state)
           const banditReward = isSpar
             ? {
                 silver: SPAR_WIN_SILVER,
@@ -1401,7 +1435,10 @@ export function useGame() {
                   decayed: false,
                 }
               : banditWinRewards(state.banditFightsThisXun)
-          const silverGain = banditReward.silver
+          const silverGain = Math.max(
+            0,
+            banditReward.silver + (isSpar ? 0 : mods.banditSilverFlat),
+          )
           const potGain = banditReward.potential
           let martialProgress = state.martialProgress
           let martialNote = ''
@@ -1606,53 +1643,55 @@ export function useGame() {
       await ensureAudio()
       const sect = getSectById(sectId)
       if (!sect) return
-      if (state.sectId) {
+      const check = canJoinSect(state, sectId)
+      if (!check.ok) {
         playSound('fail')
-        showToast('已有門派，階段四暫不支援叛出')
+        showToast(describeJoinBlock(check.reason, check.detail))
         return
       }
-      if (!state.knownLocationIds.includes(sect.homeLocationId)) {
-        playSound('fail')
-        showToast('尚未踏足該派駐地')
-        return
-      }
-      if (state.stats.level < sect.entry.minLevel) {
-        playSound('fail')
-        showToast(`等級不足（需等級 ${sect.entry.minLevel}）`)
-        return
-      }
-      if (state.currency.silver < sect.entry.minSilver) {
-        playSound('fail')
-        showToast(`銀兩不足（需 ${sect.entry.minSilver} 銀兩）`)
-        return
-      }
-      if (
-        sect.entry.minComprehension &&
-        state.comprehension < sect.entry.minComprehension
-      ) {
-        playSound('fail')
-        showToast(`悟性不足（需 ${sect.entry.minComprehension} 悟性）`)
-        return
-      }
+      const joined = applyJoinSect(state, sectId)
       const grants = SECT_MARTIAL_GRANTS[sectId]?.onJoin ?? []
-      const granted = grantMartialArts(state, grants)
+      const granted = grantMartialArts(joined, grants)
       const names = granted.learned
         .map((id) => getMartialById(id)?.name)
         .filter(Boolean)
-      persist({
-        ...granted.state,
-        sectId,
-        sectContribution: 0,
-        currency: {
-          ...granted.state.currency,
-          silver: granted.state.currency.silver - sect.entry.minSilver,
-        },
-      })
+      const blockedNote = granted.blocked.length
+        ? '（部分傳功因互斥未授）'
+        : ''
+      persist(granted.state)
       playSound('success')
+      const rule = getSectRule(sectId)
       showToast(
         names.length
-          ? `拜入${sect.name}！傳授「${names.join('、')}」`
-          : `拜入${sect.name}！`,
+          ? `拜入${sect.name}！傳授「${names.join('、')}」${blockedNote}`
+          : `拜入${sect.name}！${rule?.ruleSummary ? `｜${rule.ruleSummary}` : ''}`,
+      )
+    },
+    [ensureAudio, persist, showToast, state],
+  )
+
+  const leaveSect = useCallback(
+    async (mode: 'leave' | 'betray') => {
+      await ensureAudio()
+      const check = canLeaveSect(state, mode)
+      if (!check.ok) {
+        playSound('fail')
+        showToast(check.message)
+        return
+      }
+      const sect = state.sectId ? getSectById(state.sectId) : undefined
+      const next = applyLeaveSect(state, mode)
+      persist(next)
+      playSound(mode === 'betray' ? 'fail' : 'page')
+      showToast(
+        mode === 'leave'
+          ? `已退出${sect?.name ?? '門派'}｜${check.message}`
+          : `已叛出${sect?.name ?? '門派'}｜${check.message}`,
+      )
+      setStatusMsg(
+        mode === 'betray'
+          ? '叛出留怨：部分門派／聯盟將永拒於你。'
+          : '退派冷卻中不可立刻再入他派。',
       )
     },
     [ensureAudio, persist, showToast, state],
@@ -1758,6 +1797,7 @@ export function useGame() {
         combatLoseStreak: 0,
         banditFightsThisXun: 0,
         sparFightsThisXun: 0,
+        lifetimeXuns: (routed.lifetimeXuns ?? 0) + 1,
       },
       'advance_xun',
       1,
@@ -1836,12 +1876,14 @@ export function useGame() {
             '事件已了結；戰局開打——勝可得加碼，敗不回溯劇情',
         )
         setCombatKind('event')
+        const mods = computeDifficultyMods(next)
         const encounter = makeBanditEncounter(
           buildPlayerCombatant(next),
           buildPartyCombatants(next),
           {
             loseStreak: next.combatLoseStreak,
             year: next.time.year,
+            enemyScale: mods.enemyScale,
           },
         )
         setCombat(encounter)
@@ -2016,6 +2058,7 @@ export function useGame() {
     dismissNpc,
     makePartner,
     joinSect,
+    leaveSect,
     contributeSect,
     advanceXun,
     resolvePendingChoice,

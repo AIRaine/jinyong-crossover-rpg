@@ -8,6 +8,10 @@ import {
   trainPotentialCost,
 } from '../../data/martialArts'
 import {
+  canProgressMartial,
+  martialGateHint,
+} from '../../lib/martialGates'
+import {
   TECH_BRANCH_LABEL,
   type GameState,
   type MartialKind,
@@ -36,7 +40,7 @@ export function TechTab({ state, onUnlock, onTrain, onSetSlot }: TechTabProps) {
       <div className="rounded-2xl border border-paper/10 bg-ink-900/70 p-4">
         <h2 className="font-display text-xl text-paper">武學與科技</h2>
         <p className="mt-1 text-xs leading-relaxed text-paper/55">
-          配置主內功／輔心法／輕功／最多四主動；潛能修練，第 5／10 重為瓶頸。
+          配置主內功／輔心法／輕功／最多四主動；潛能修練，第 5／10 重為瓶頸。部分招式有前置鏈與互斥，與門派綁定。
         </p>
         <div className="mt-3 grid grid-cols-2 gap-2 text-sm">
           <p className="rounded-lg bg-ink-950/80 px-3 py-2 text-amber-100 ring-1 ring-amber-700/30">
@@ -88,6 +92,11 @@ export function TechTab({ state, onUnlock, onTrain, onSetSlot }: TechTabProps) {
                     )
                   : 1
                 const cost = lv <= 0 ? 5 : trainPotentialCost(lv)
+                const gate = canProgressMartial(state, art.id, {
+                  learning: lv <= 0,
+                })
+                const hint = martialGateHint(art.id)
+                const blocked = lv < 10 && !gate.ok
                 return (
                   <article
                     key={art.id}
@@ -103,28 +112,40 @@ export function TechTab({ state, onUnlock, onTrain, onSetSlot }: TechTabProps) {
                         <p className="mt-1 text-xs leading-relaxed text-paper/65">
                           {art.description}
                         </p>
+                        {hint && (
+                          <p className="mt-1 text-[10px] leading-snug text-amber-100/65">
+                            規矩：{hint}
+                          </p>
+                        )}
                         <p className="mt-1 text-[11px] text-paper/45">
                           {lv > 0 ? `第 ${lv} 重` : '未學會'}
                           {lv > 0 && lv < 10 && bottleneck
                             ? ` · 下一重瓶頸成功率 ${Math.round(chance * 100)}%`
                             : ''}
                         </p>
+                        {blocked && (
+                          <p className="mt-1 text-[10px] text-rose-200/80">
+                            {gate.ok ? '' : gate.reason}
+                          </p>
+                        )}
                       </div>
                     </div>
                     <div className="mt-2 flex gap-2">
                       <button
                         type="button"
                         onClick={() => onTrain(art.id)}
-                        disabled={lv >= 10}
+                        disabled={lv >= 10 || blocked}
                         className="touch-btn flex-1 rounded-lg bg-cinnabar/90 py-2.5 text-xs text-paper disabled:opacity-40"
                       >
                         {lv >= 10
                           ? '已圓滿'
-                          : lv <= 0
-                            ? `學習（${cost} 潛能）`
-                            : bottleneck
-                              ? `衝擊第 ${next} 重（${cost} 潛能）`
-                              : `修練第 ${next} 重（${cost} 潛能）`}
+                          : blocked
+                            ? '條件未符'
+                            : lv <= 0
+                              ? `學習（${cost} 潛能）`
+                              : bottleneck
+                                ? `衝擊第 ${next} 重（${cost} 潛能）`
+                                : `修練第 ${next} 重（${cost} 潛能）`}
                       </button>
                       {lv > 0 && (
                         <ConfigButton

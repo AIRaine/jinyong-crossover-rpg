@@ -81,6 +81,7 @@ export default function App() {
             <SectTab
               state={game.state}
               onJoin={game.joinSect}
+              onLeave={game.leaveSect}
               onContribute={game.contributeSect}
             />
           )}

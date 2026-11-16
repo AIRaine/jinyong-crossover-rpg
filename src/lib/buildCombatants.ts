@@ -1,5 +1,6 @@
 import { getNpcById } from '../data/npcs'
 import { computePanelStats } from './combatStats'
+import { computeDifficultyMods } from './difficultyModifiers'
 import type { CombatFighter } from './combatEngine'
 import type { GameState } from '../types/game'
 
@@ -30,16 +31,21 @@ export function buildPlayerCombatant(
   state: GameState,
 ): Omit<CombatFighter, 'side' | 'status' | 'poisonTurns' | 'stunned'> {
   const panel = computePanelStats(state)
+  const mods = computeDifficultyMods(state)
+  const skillPower = Math.max(
+    1.15,
+    Math.min(1.85, computeSkillPower(state) + mods.skillPowerFlat),
+  )
   return {
     id: 'player',
     name: state.playerName,
     hp: panel.hp,
     maxHp: panel.maxHp,
-    atk: panel.attack,
-    def: panel.defense,
+    atk: panel.attack + mods.atkFlat,
+    def: panel.defense + mods.defFlat,
     internal: Math.max(10, panel.internalForce),
     isPlayer: true,
-    skillPower: computeSkillPower(state),
+    skillPower,
   }
 }
 
