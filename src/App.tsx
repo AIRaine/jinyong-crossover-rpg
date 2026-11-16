@@ -37,7 +37,10 @@ export default function App() {
           />
         )}
 
-        <main className="relative flex-1 overflow-y-auto overscroll-contain px-3 py-3">
+        <main
+          id="app-main-scroll"
+          className="relative flex-1 overflow-y-auto overscroll-contain px-3 py-3"
+        >
           {game.tab === 'travel' && (
             <TravelTab
               state={game.state}
